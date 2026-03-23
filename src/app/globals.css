@@ -88,6 +88,13 @@ body {
   font-family: var(--font-sans), system-ui, sans-serif;
 }
 
+button,
+a,
+select,
+[role="button"] {
+  cursor: pointer;
+}
+
 /* Scrollbar styles */
 ::-webkit-scrollbar {
   width: 6px;
