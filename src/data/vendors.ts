@@ -13,6 +13,7 @@ export interface Vendor {
   category: VendorCategory;
   description: string;
   website: string;
+  logoUrl: string;
 }
 
 export const vendors: Vendor[] = [
@@ -23,6 +24,7 @@ export const vendors: Vendor[] = [
     category: "Networking",
     description: "Enterprise networking, switching, routing, and collaboration solutions.",
     website: "https://www.cisco.com",
+    logoUrl: "https://logo.clearbit.com/cisco.com",
   },
   {
     id: "cisco-meraki",
@@ -30,6 +32,7 @@ export const vendors: Vendor[] = [
     category: "Networking",
     description: "Cloud-managed IT solutions including wireless, switching, and security.",
     website: "https://meraki.cisco.com",
+    logoUrl: "https://logo.clearbit.com/meraki.cisco.com",
   },
   {
     id: "ubiquiti",
@@ -37,6 +40,7 @@ export const vendors: Vendor[] = [
     category: "Networking",
     description: "Networking equipment for enterprise and SMB including UniFi and EdgeMax.",
     website: "https://www.ui.com",
+    logoUrl: "https://logo.clearbit.com/ui.com",
   },
   {
     id: "aruba",
@@ -44,6 +48,7 @@ export const vendors: Vendor[] = [
     category: "Networking",
     description: "Wired and wireless LAN, SD-WAN, and network security solutions.",
     website: "https://www.arubanetworks.com",
+    logoUrl: "https://logo.clearbit.com/arubanetworks.com",
   },
   {
     id: "juniper",
@@ -51,6 +56,7 @@ export const vendors: Vendor[] = [
     category: "Networking",
     description: "AI-driven enterprise networking, routing, and security.",
     website: "https://www.juniper.net",
+    logoUrl: "https://logo.clearbit.com/juniper.net",
   },
 
   // Firewalls / Security
@@ -60,6 +66,7 @@ export const vendors: Vendor[] = [
     category: "Firewalls / Security",
     description: "Next-generation firewalls, cloud security, and threat intelligence.",
     website: "https://www.paloaltonetworks.com",
+    logoUrl: "https://logo.clearbit.com/paloaltonetworks.com",
   },
   {
     id: "fortinet",
@@ -67,6 +74,7 @@ export const vendors: Vendor[] = [
     category: "Firewalls / Security",
     description: "FortiGate firewalls, SD-WAN, and unified threat management.",
     website: "https://www.fortinet.com",
+    logoUrl: "https://logo.clearbit.com/fortinet.com",
   },
   {
     id: "sonicwall",
@@ -74,6 +82,7 @@ export const vendors: Vendor[] = [
     category: "Firewalls / Security",
     description: "Firewalls, secure remote access, and email security solutions.",
     website: "https://www.sonicwall.com",
+    logoUrl: "https://logo.clearbit.com/sonicwall.com",
   },
   {
     id: "watchguard",
@@ -81,6 +90,7 @@ export const vendors: Vendor[] = [
     category: "Firewalls / Security",
     description: "Network security appliances, Wi-Fi security, and MFA solutions.",
     website: "https://www.watchguard.com",
+    logoUrl: "https://logo.clearbit.com/watchguard.com",
   },
   {
     id: "sophos",
@@ -88,6 +98,7 @@ export const vendors: Vendor[] = [
     category: "Firewalls / Security",
     description: "Next-gen firewalls, endpoint protection, and managed threat response.",
     website: "https://www.sophos.com",
+    logoUrl: "https://logo.clearbit.com/sophos.com",
   },
 
   // Cloud / Infrastructure
@@ -97,6 +108,7 @@ export const vendors: Vendor[] = [
     category: "Cloud / Infrastructure",
     description: "Azure cloud, Microsoft 365, Windows Server, and enterprise software.",
     website: "https://www.microsoft.com",
+    logoUrl: "https://logo.clearbit.com/microsoft.com",
   },
   {
     id: "aws",
@@ -104,6 +116,7 @@ export const vendors: Vendor[] = [
     category: "Cloud / Infrastructure",
     description: "Cloud computing platform with compute, storage, database, and AI services.",
     website: "https://aws.amazon.com",
+    logoUrl: "https://logo.clearbit.com/aws.amazon.com",
   },
   {
     id: "gcp",
@@ -111,6 +124,7 @@ export const vendors: Vendor[] = [
     category: "Cloud / Infrastructure",
     description: "Cloud computing, data analytics, and machine learning services.",
     website: "https://cloud.google.com",
+    logoUrl: "https://logo.clearbit.com/cloud.google.com",
   },
 
   // Endpoint Security
@@ -120,6 +134,7 @@ export const vendors: Vendor[] = [
     category: "Endpoint Security",
     description: "Cloud-native endpoint protection, threat intelligence, and incident response.",
     website: "https://www.crowdstrike.com",
+    logoUrl: "https://logo.clearbit.com/crowdstrike.com",
   },
   {
     id: "sentinelone",
@@ -127,6 +142,7 @@ export const vendors: Vendor[] = [
     category: "Endpoint Security",
     description: "AI-powered endpoint detection and response (EDR) platform.",
     website: "https://www.sentinelone.com",
+    logoUrl: "https://logo.clearbit.com/sentinelone.com",
   },
   {
     id: "carbon-black",
@@ -134,6 +150,7 @@ export const vendors: Vendor[] = [
     category: "Endpoint Security",
     description: "Cloud-native endpoint and workload protection.",
     website: "https://www.carbonblack.com",
+    logoUrl: "https://logo.clearbit.com/carbonblack.com",
   },
   {
     id: "microsoft-defender",
@@ -141,6 +158,7 @@ export const vendors: Vendor[] = [
     category: "Endpoint Security",
     description: "Integrated endpoint security, threat detection, and response.",
     website: "https://www.microsoft.com/security/business/endpoint-security",
+    logoUrl: "https://logo.clearbit.com/microsoft.com",
   },
 
   // RMM / PSA
@@ -150,6 +168,7 @@ export const vendors: Vendor[] = [
     category: "RMM / PSA",
     description: "IT management platform with RMM, PSA, and cybersecurity solutions.",
     website: "https://www.connectwise.com",
+    logoUrl: "https://logo.clearbit.com/connectwise.com",
   },
   {
     id: "datto",
@@ -157,6 +176,7 @@ export const vendors: Vendor[] = [
     category: "RMM / PSA",
     description: "MSP-focused RMM, backup, disaster recovery, and networking tools.",
     website: "https://www.datto.com",
+    logoUrl: "https://logo.clearbit.com/datto.com",
   },
   {
     id: "ninjaone",
@@ -164,6 +184,7 @@ export const vendors: Vendor[] = [
     category: "RMM / PSA",
     description: "Unified IT management with RMM, patch management, and remote access.",
     website: "https://www.ninjaone.com",
+    logoUrl: "https://logo.clearbit.com/ninjaone.com",
   },
   {
     id: "n-able",
@@ -171,6 +192,7 @@ export const vendors: Vendor[] = [
     category: "RMM / PSA",
     description: "IT management solutions including N-central and N-sight RMM.",
     website: "https://www.n-able.com",
+    logoUrl: "https://logo.clearbit.com/n-able.com",
   },
 
   // Backup & DR
@@ -180,6 +202,7 @@ export const vendors: Vendor[] = [
     category: "Backup & DR",
     description: "Data backup, disaster recovery, and intelligent data management.",
     website: "https://www.veeam.com",
+    logoUrl: "https://logo.clearbit.com/veeam.com",
   },
   {
     id: "acronis",
@@ -187,6 +210,7 @@ export const vendors: Vendor[] = [
     category: "Backup & DR",
     description: "Cyber protection combining backup, disaster recovery, and security.",
     website: "https://www.acronis.com",
+    logoUrl: "https://logo.clearbit.com/acronis.com",
   },
   {
     id: "druva",
@@ -194,6 +218,7 @@ export const vendors: Vendor[] = [
     category: "Backup & DR",
     description: "SaaS-based data protection and management across endpoints and cloud.",
     website: "https://www.druva.com",
+    logoUrl: "https://logo.clearbit.com/druva.com",
   },
 
   // Identity & Access
@@ -203,6 +228,7 @@ export const vendors: Vendor[] = [
     category: "Identity & Access",
     description: "Identity and access management, SSO, and multi-factor authentication.",
     website: "https://www.okta.com",
+    logoUrl: "https://logo.clearbit.com/okta.com",
   },
   {
     id: "duo-security",
@@ -210,6 +236,7 @@ export const vendors: Vendor[] = [
     category: "Identity & Access",
     description: "Multi-factor authentication and zero-trust security platform.",
     website: "https://duo.com",
+    logoUrl: "https://logo.clearbit.com/duo.com",
   },
   {
     id: "jumpcloud",
@@ -217,6 +244,7 @@ export const vendors: Vendor[] = [
     category: "Identity & Access",
     description: "Open directory platform for identity, access, and device management.",
     website: "https://jumpcloud.com",
+    logoUrl: "https://logo.clearbit.com/jumpcloud.com",
   },
 ];
 
