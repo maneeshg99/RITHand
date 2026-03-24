@@ -1,11 +1,19 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import type { EolProduct, CveAlert } from "@/data/compliance";
 
 interface AppState {
   selectedVendorIds: string[];
   readNewsIds: string[];
   bookmarkedNewsIds: string[];
+  // Compliance checklist state
+  activeFrameworkIds: string[];
+  checkedComplianceItems: Record<string, string[]>; // frameworkId -> checked item ids
+  // User-entered EOL items (beyond template data)
+  userEolItems: EolProduct[];
+  // User-entered CVE alerts (beyond template data)
+  userCveAlerts: CveAlert[];
 }
 
 interface AppContextType extends AppState {
@@ -17,6 +25,17 @@ interface AppContextType extends AppState {
   isBookmarked: (newsId: string) => boolean;
   selectAllVendorsInCategory: (vendorIds: string[]) => void;
   deselectAllVendorsInCategory: (vendorIds: string[]) => void;
+  // Compliance
+  addFramework: (frameworkId: string) => void;
+  removeFramework: (frameworkId: string) => void;
+  toggleComplianceItem: (frameworkId: string, itemId: string) => void;
+  isComplianceItemChecked: (frameworkId: string, itemId: string) => boolean;
+  // EOL
+  addUserEolItem: (item: EolProduct) => void;
+  removeUserEolItem: (id: string) => void;
+  // CVE
+  addUserCveAlert: (alert: CveAlert) => void;
+  removeUserCveAlert: (id: string) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -27,6 +46,10 @@ const defaultState: AppState = {
   selectedVendorIds: [],
   readNewsIds: [],
   bookmarkedNewsIds: [],
+  activeFrameworkIds: [],
+  checkedComplianceItems: {},
+  userEolItems: [],
+  userCveAlerts: [],
 };
 
 function loadState(): AppState {
@@ -110,6 +133,79 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     [state.bookmarkedNewsIds]
   );
 
+  // Compliance
+  const addFramework = useCallback((frameworkId: string) => {
+    setState((prev) => ({
+      ...prev,
+      activeFrameworkIds: prev.activeFrameworkIds.includes(frameworkId)
+        ? prev.activeFrameworkIds
+        : [...prev.activeFrameworkIds, frameworkId],
+    }));
+  }, []);
+
+  const removeFramework = useCallback((frameworkId: string) => {
+    setState((prev) => {
+      const { [frameworkId]: _removed, ...remainingChecked } = prev.checkedComplianceItems;
+      return {
+        ...prev,
+        activeFrameworkIds: prev.activeFrameworkIds.filter((id) => id !== frameworkId),
+        checkedComplianceItems: remainingChecked,
+      };
+    });
+  }, []);
+
+  const toggleComplianceItem = useCallback((frameworkId: string, itemId: string) => {
+    setState((prev) => {
+      const current = prev.checkedComplianceItems[frameworkId] ?? [];
+      const updated = current.includes(itemId)
+        ? current.filter((id) => id !== itemId)
+        : [...current, itemId];
+      return {
+        ...prev,
+        checkedComplianceItems: {
+          ...prev.checkedComplianceItems,
+          [frameworkId]: updated,
+        },
+      };
+    });
+  }, []);
+
+  const isComplianceItemChecked = useCallback(
+    (frameworkId: string, itemId: string) =>
+      (state.checkedComplianceItems[frameworkId] ?? []).includes(itemId),
+    [state.checkedComplianceItems]
+  );
+
+  // EOL
+  const addUserEolItem = useCallback((item: EolProduct) => {
+    setState((prev) => ({
+      ...prev,
+      userEolItems: [...prev.userEolItems, item],
+    }));
+  }, []);
+
+  const removeUserEolItem = useCallback((id: string) => {
+    setState((prev) => ({
+      ...prev,
+      userEolItems: prev.userEolItems.filter((e) => e.id !== id),
+    }));
+  }, []);
+
+  // CVE
+  const addUserCveAlert = useCallback((alert: CveAlert) => {
+    setState((prev) => ({
+      ...prev,
+      userCveAlerts: [...prev.userCveAlerts, alert],
+    }));
+  }, []);
+
+  const removeUserCveAlert = useCallback((id: string) => {
+    setState((prev) => ({
+      ...prev,
+      userCveAlerts: prev.userCveAlerts.filter((c) => c.id !== id),
+    }));
+  }, []);
+
   return (
     <AppContext.Provider
       value={{
@@ -122,6 +218,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         isBookmarked,
         selectAllVendorsInCategory,
         deselectAllVendorsInCategory,
+        addFramework,
+        removeFramework,
+        toggleComplianceItem,
+        isComplianceItemChecked,
+        addUserEolItem,
+        removeUserEolItem,
+        addUserCveAlert,
+        removeUserCveAlert,
       }}
     >
       {children}
