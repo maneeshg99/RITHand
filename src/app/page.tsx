@@ -5,12 +5,12 @@ import { useApp } from "@/context/AppContext";
 import { vendors } from "@/data/vendors";
 import { mockNews } from "@/data/news";
 import {
-  complianceFrameworks,
-  licenseRenewals,
-  patchCompliance,
+  complianceFrameworkTemplates,
   eolProducts,
-  incidentSummary,
+  vendorPatchSchedules,
+  cveAlerts,
 } from "@/data/compliance";
+import type { ComplianceFramework } from "@/data/compliance";
 import { NewsCard } from "@/components/NewsCard";
 import {
   Search,
@@ -20,88 +20,581 @@ import {
   Building2,
   ShieldCheck,
   FileWarning,
-  CalendarClock,
-  Activity,
-  Monitor,
-  Clock,
+  Wrench,
+  ChevronDown,
   ChevronRight,
+  X,
+  Plus,
+  CheckSquare,
+  Square,
+  ExternalLink,
+  AlertCircle,
+  Calendar,
+  Clock,
 } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import type { NewsSeverity, NewsType } from "@/data/news";
 
-function ComplianceScoreRing({ score, size = 48 }: { score: number; size?: number }) {
-  const radius = (size - 6) / 2;
-  const circumference = 2 * Math.PI * radius;
-  const offset = circumference - (score / 100) * circumference;
-  const color =
-    score >= 90 ? "text-green-500" : score >= 75 ? "text-yellow-500" : "text-red-500";
+// ─── Compliance Panel ─────────────────────────────────────────────────────────
+
+function CompliancePanel() {
+  const {
+    activeFrameworkIds,
+    addFramework,
+    removeFramework,
+    toggleComplianceItem,
+    isComplianceItemChecked,
+  } = useApp();
+
+  const [expandedFrameworks, setExpandedFrameworks] = useState<Set<string>>(new Set());
+  const [addDropdownOpen, setAddDropdownOpen] = useState(false);
+
+  const activeFrameworks = activeFrameworkIds
+    .map((id) => complianceFrameworkTemplates.find((f) => f.id === id))
+    .filter((f): f is ComplianceFramework => f !== undefined);
+
+  const availableToAdd = complianceFrameworkTemplates.filter(
+    (f) => !activeFrameworkIds.includes(f.id)
+  );
+
+  function toggleExpand(id: string) {
+    setExpandedFrameworks((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  }
+
+  function getFrameworkProgress(fw: ComplianceFramework) {
+    const allItems = fw.sections.flatMap((s) => s.items);
+    const checked = allItems.filter((item) => isComplianceItemChecked(fw.id, item.id)).length;
+    return { checked, total: allItems.length };
+  }
 
   return (
-    <div className="relative" style={{ width: size, height: size }}>
-      <svg width={size} height={size} className="-rotate-90">
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          fill="none"
-          stroke="currentColor"
-          strokeWidth={4}
-          className="text-muted/50"
-        />
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          fill="none"
-          stroke="currentColor"
-          strokeWidth={4}
-          strokeDasharray={circumference}
-          strokeDashoffset={offset}
-          strokeLinecap="round"
-          className={color}
-        />
-      </svg>
-      <span className="absolute inset-0 flex items-center justify-center text-xs font-bold text-foreground">
-        {score}
-      </span>
+    <div className="rounded-xl border border-border bg-card p-4">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <ShieldCheck className="h-4 w-4 text-muted-foreground" />
+          <h2 className="text-sm font-semibold text-foreground">Compliance Checklists</h2>
+        </div>
+
+        {/* Add Framework dropdown */}
+        <div className="relative">
+          <button
+            onClick={() => setAddDropdownOpen((o) => !o)}
+            className="flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-md border border-border bg-background hover:bg-muted transition-colors text-foreground"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            Add Framework
+            <ChevronDown className={cn("h-3 w-3 transition-transform", addDropdownOpen && "rotate-180")} />
+          </button>
+          {addDropdownOpen && (
+            <div className="absolute right-0 top-full mt-1 z-20 w-56 rounded-lg border border-border bg-card shadow-lg py-1">
+              {availableToAdd.length === 0 ? (
+                <p className="px-3 py-2 text-xs text-muted-foreground">All frameworks added</p>
+              ) : (
+                availableToAdd.map((fw) => (
+                  <button
+                    key={fw.id}
+                    onClick={() => {
+                      addFramework(fw.id);
+                      setAddDropdownOpen(false);
+                      setExpandedFrameworks((prev) => new Set([...prev, fw.id]));
+                    }}
+                    className="w-full text-left px-3 py-2 text-xs text-foreground hover:bg-muted transition-colors"
+                  >
+                    <div className="font-medium">{fw.name}</div>
+                    <div className="text-muted-foreground truncate">{fw.description}</div>
+                  </button>
+                ))
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {activeFrameworks.length === 0 ? (
+        <p className="text-xs text-muted-foreground py-2">
+          No frameworks added. Use the button above to add compliance frameworks relevant to this client.
+        </p>
+      ) : (
+        <div className="space-y-2">
+          {activeFrameworks.map((fw) => {
+            const { checked, total } = getFrameworkProgress(fw);
+            const isExpanded = expandedFrameworks.has(fw.id);
+            const pct = total > 0 ? Math.round((checked / total) * 100) : 0;
+
+            return (
+              <div key={fw.id} className="border border-border rounded-lg overflow-hidden">
+                {/* Framework header row */}
+                <div className="flex items-center gap-2 px-3 py-2.5 bg-muted/30">
+                  <button
+                    onClick={() => toggleExpand(fw.id)}
+                    className="flex items-center gap-2 flex-1 min-w-0 text-left"
+                  >
+                    <ChevronRight
+                      className={cn("h-4 w-4 text-muted-foreground shrink-0 transition-transform", isExpanded && "rotate-90")}
+                    />
+                    <span className="text-sm font-medium text-foreground hover:text-primary transition-colors">
+                      {fw.name}
+                    </span>
+                  </button>
+
+                  {/* Progress pill */}
+                  <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-20 h-1.5 rounded-full bg-muted overflow-hidden">
+                        <div
+                          className={cn(
+                            "h-full rounded-full transition-all",
+                            pct === 100 ? "bg-green-500" : pct >= 50 ? "bg-yellow-500" : "bg-red-500"
+                          )}
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                      <span className="text-xs text-muted-foreground w-14 text-right">
+                        {checked}/{total} items
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => removeFramework(fw.id)}
+                      className="p-1 rounded hover:bg-red-100 hover:text-red-600 text-muted-foreground transition-colors"
+                      title="Remove framework"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Expanded checklist */}
+                {isExpanded && (
+                  <div className="divide-y divide-border/50">
+                    {fw.sections.map((section) => {
+                      const sectionChecked = section.items.filter((item) =>
+                        isComplianceItemChecked(fw.id, item.id)
+                      ).length;
+                      return (
+                        <div key={section.id} className="px-3 py-2">
+                          <div className="flex items-center justify-between mb-1.5">
+                            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                              {section.name}
+                            </p>
+                            <span className="text-xs text-muted-foreground">
+                              {sectionChecked}/{section.items.length}
+                            </span>
+                          </div>
+                          <div className="space-y-1">
+                            {section.items.map((item) => {
+                              const checked = isComplianceItemChecked(fw.id, item.id);
+                              return (
+                                <button
+                                  key={item.id}
+                                  onClick={() => toggleComplianceItem(fw.id, item.id)}
+                                  className="flex items-start gap-2 w-full text-left group"
+                                >
+                                  {checked ? (
+                                    <CheckSquare className="h-4 w-4 text-green-500 shrink-0 mt-0.5" />
+                                  ) : (
+                                    <Square className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5 group-hover:text-foreground transition-colors" />
+                                  )}
+                                  <span
+                                    className={cn(
+                                      "text-xs leading-relaxed transition-colors",
+                                      checked
+                                        ? "text-muted-foreground line-through"
+                                        : "text-foreground group-hover:text-foreground"
+                                    )}
+                                  >
+                                    {item.label}
+                                  </span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
 
-function StatCard({
-  icon: Icon,
-  label,
-  value,
-  subtext,
-  accent,
-}: {
-  icon: React.ElementType;
-  label: string;
-  value: string | number;
-  subtext?: string;
-  accent?: "red" | "yellow" | "green" | "blue";
-}) {
-  const accentColors = {
-    red: "text-red-500",
-    yellow: "text-yellow-500",
-    green: "text-green-500",
-    blue: "text-blue-500",
+// ─── EOL Tracker ─────────────────────────────────────────────────────────────
+
+function EolTracker({ selectedVendorIds }: { selectedVendorIds: string[] }) {
+  const { userEolItems } = useApp();
+  const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
+
+  const allEolItems = [...eolProducts, ...userEolItems].filter((e) =>
+    selectedVendorIds.includes(e.vendorId)
+  );
+
+  function toggleItem(id: string) {
+    setExpandedItems((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  }
+
+  return (
+    <div className="rounded-xl border border-border bg-card p-4">
+      <div className="flex items-center gap-2 mb-4">
+        <FileWarning className="h-4 w-4 text-muted-foreground" />
+        <h2 className="text-sm font-semibold text-foreground">End-of-Life Tracker</h2>
+      </div>
+
+      {allEolItems.length === 0 ? (
+        <p className="text-xs text-muted-foreground">No EOL items for your selected vendors.</p>
+      ) : (
+        <div className="space-y-2">
+          {allEolItems.map((eol) => {
+            const daysUntil = Math.ceil(
+              (new Date(eol.eolDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+            );
+            const isExpanded = expandedItems.has(eol.id);
+            const vendor = vendors.find((v) => v.id === eol.vendorId);
+
+            return (
+              <div key={eol.id} className="border border-border rounded-lg overflow-hidden">
+                {/* EOL item header */}
+                <button
+                  onClick={() => toggleItem(eol.id)}
+                  className="flex items-center justify-between w-full px-3 py-2.5 hover:bg-muted/30 transition-colors text-left"
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <ChevronDown
+                      className={cn("h-4 w-4 text-muted-foreground shrink-0 transition-transform", !isExpanded && "-rotate-90")}
+                    />
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="text-sm font-medium text-foreground">{eol.product}</span>
+                        {vendor && (
+                          <span className="text-xs text-muted-foreground">({vendor.name})</span>
+                        )}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        EOL: {new Date(eol.eolDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                        {" · "}{eol.affectedAssets} asset{eol.affectedAssets !== 1 ? "s" : ""}
+                      </div>
+                    </div>
+                  </div>
+                  <span
+                    className={cn(
+                      "text-xs font-semibold shrink-0 ml-2 px-2 py-0.5 rounded-full",
+                      daysUntil <= 90
+                        ? "bg-red-100 text-red-700"
+                        : daysUntil <= 365
+                        ? "bg-yellow-100 text-yellow-700"
+                        : "bg-muted text-muted-foreground"
+                    )}
+                  >
+                    {daysUntil}d
+                  </span>
+                </button>
+
+                {/* Expanded remediation options */}
+                {isExpanded && (
+                  <div className="border-t border-border bg-muted/20 px-3 py-3 space-y-3">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                      Remediation Options
+                    </p>
+                    {eol.remediationOptions.map((opt, i) => (
+                      <div key={i} className="rounded-md border border-border bg-card px-3 py-2.5">
+                        <div className="flex items-center gap-1.5 mb-1">
+                          <span
+                            className={cn(
+                              "text-[10px] font-bold uppercase px-1.5 py-0.5 rounded",
+                              opt.type === "replacement"
+                                ? "bg-blue-100 text-blue-700"
+                                : "bg-orange-100 text-orange-700"
+                            )}
+                          >
+                            {opt.type === "replacement" ? "Replacement" : "EOL Support"}
+                          </span>
+                          <span className="text-xs font-medium text-foreground">{opt.title}</span>
+                        </div>
+                        <p className="text-xs text-muted-foreground leading-relaxed">{opt.description}</p>
+                      </div>
+                    ))}
+
+                    {/* Open in new tab */}
+                    <Link
+                      href={`/eol/${eol.id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline font-medium"
+                    >
+                      <ExternalLink className="h-3.5 w-3.5" />
+                      Open full EOL detail in new tab
+                    </Link>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Patching & CVE Panel ─────────────────────────────────────────────────────
+
+function PatchingPanel({ selectedVendorIds }: { selectedVendorIds: string[] }) {
+  const { userCveAlerts } = useApp();
+  const [expandedCves, setExpandedCves] = useState<Set<string>>(new Set());
+
+  const relevantSchedules = vendorPatchSchedules.filter((s) =>
+    selectedVendorIds.includes(s.vendorId)
+  );
+
+  const allCves = [...cveAlerts, ...userCveAlerts].filter((c) =>
+    selectedVendorIds.includes(c.vendorId)
+  );
+
+  const urgentCves = allCves.filter((c) => c.immediateAction);
+  const otherCves = allCves.filter((c) => !c.immediateAction);
+
+  function toggleCve(id: string) {
+    setExpandedCves((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  }
+
+  const severityColors: Record<string, string> = {
+    critical: "bg-red-100 text-red-700 border-red-200",
+    high: "bg-orange-100 text-orange-700 border-orange-200",
+    medium: "bg-yellow-100 text-yellow-700 border-yellow-200",
+    low: "bg-blue-100 text-blue-700 border-blue-200",
   };
 
   return (
     <div className="rounded-xl border border-border bg-card p-4">
-      <div className="flex items-center gap-2 mb-2">
-        <Icon className={cn("h-4 w-4", accent ? accentColors[accent] : "text-muted-foreground")} />
-        <span className="text-xs text-muted-foreground font-medium">{label}</span>
+      <div className="flex items-center gap-2 mb-4">
+        <Wrench className="h-4 w-4 text-muted-foreground" />
+        <h2 className="text-sm font-semibold text-foreground">Vendor Patching & CVE Alerts</h2>
       </div>
-      <p className={cn("text-2xl font-bold", accent ? accentColors[accent] : "text-foreground")}>
-        {value}
-      </p>
-      {subtext && <p className="text-xs text-muted-foreground mt-1">{subtext}</p>}
+
+      {/* CVE Alerts – Immediate Action */}
+      {urgentCves.length > 0 && (
+        <div className="mb-4">
+          <div className="flex items-center gap-2 mb-2">
+            <AlertCircle className="h-4 w-4 text-red-500" />
+            <span className="text-xs font-semibold text-red-600 uppercase tracking-wide">
+              Immediate Patch Required ({urgentCves.length})
+            </span>
+          </div>
+          <div className="space-y-1.5">
+            {urgentCves.map((cve) => {
+              const vendor = vendors.find((v) => v.id === cve.vendorId);
+              const isExpanded = expandedCves.has(cve.id);
+              return (
+                <div key={cve.id} className="border border-red-200 rounded-lg overflow-hidden bg-red-50/40">
+                  <button
+                    onClick={() => toggleCve(cve.id)}
+                    className="flex items-center justify-between w-full px-3 py-2 text-left hover:bg-red-50/60 transition-colors"
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <ChevronDown
+                        className={cn("h-3.5 w-3.5 text-red-400 shrink-0 transition-transform", !isExpanded && "-rotate-90")}
+                      />
+                      <span className={cn("text-[10px] font-bold uppercase px-1.5 py-0.5 rounded border", severityColors[cve.severity])}>
+                        {cve.severity}
+                      </span>
+                      <span className="text-xs font-mono font-semibold text-foreground">{cve.cveId}</span>
+                      {vendor && <span className="text-xs text-muted-foreground truncate">· {vendor.name}</span>}
+                    </div>
+                    <a
+                      href={cve.patchUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      className="shrink-0 ml-2 inline-flex items-center gap-1 text-xs text-primary hover:underline font-medium"
+                    >
+                      Patch <ExternalLink className="h-3 w-3" />
+                    </a>
+                  </button>
+                  {isExpanded && (
+                    <div className="border-t border-red-200 px-3 py-2 bg-red-50/20">
+                      <p className="text-xs text-foreground mb-1">{cve.summary}</p>
+                      <p className="text-xs text-muted-foreground mb-1.5">
+                        <span className="font-medium">Affected:</span> {cve.affectedProducts}
+                      </p>
+                      <p className="text-xs text-muted-foreground mb-2">
+                        Reported: {new Date(cve.dateReported).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                      </p>
+                      <a
+                        href={cve.advisoryUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                      >
+                        <ExternalLink className="h-3 w-3" />
+                        View vendor advisory
+                      </a>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* CVE Alerts – Standard */}
+      {otherCves.length > 0 && (
+        <div className="mb-4">
+          <div className="flex items-center gap-2 mb-2">
+            <AlertTriangle className="h-4 w-4 text-yellow-500" />
+            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+              Recent CVEs ({otherCves.length})
+            </span>
+          </div>
+          <div className="space-y-1.5">
+            {otherCves.map((cve) => {
+              const vendor = vendors.find((v) => v.id === cve.vendorId);
+              const isExpanded = expandedCves.has(cve.id);
+              return (
+                <div key={cve.id} className="border border-border rounded-lg overflow-hidden">
+                  <button
+                    onClick={() => toggleCve(cve.id)}
+                    className="flex items-center justify-between w-full px-3 py-2 text-left hover:bg-muted/30 transition-colors"
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <ChevronDown
+                        className={cn("h-3.5 w-3.5 text-muted-foreground shrink-0 transition-transform", !isExpanded && "-rotate-90")}
+                      />
+                      <span className={cn("text-[10px] font-bold uppercase px-1.5 py-0.5 rounded border", severityColors[cve.severity])}>
+                        {cve.severity}
+                      </span>
+                      <span className="text-xs font-mono font-semibold text-foreground">{cve.cveId}</span>
+                      {vendor && <span className="text-xs text-muted-foreground truncate">· {vendor.name}</span>}
+                    </div>
+                    <a
+                      href={cve.patchUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      className="shrink-0 ml-2 inline-flex items-center gap-1 text-xs text-primary hover:underline font-medium"
+                    >
+                      Patch <ExternalLink className="h-3 w-3" />
+                    </a>
+                  </button>
+                  {isExpanded && (
+                    <div className="border-t border-border px-3 py-2 bg-muted/10">
+                      <p className="text-xs text-foreground mb-1">{cve.summary}</p>
+                      <p className="text-xs text-muted-foreground mb-1.5">
+                        <span className="font-medium">Affected:</span> {cve.affectedProducts}
+                      </p>
+                      <p className="text-xs text-muted-foreground mb-2">
+                        Reported: {new Date(cve.dateReported).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                      </p>
+                      <a
+                        href={cve.advisoryUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                      >
+                        <ExternalLink className="h-3 w-3" />
+                        View vendor advisory
+                      </a>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {allCves.length === 0 && (
+        <div className="flex items-center gap-2 mb-4 text-xs text-muted-foreground">
+          <AlertCircle className="h-4 w-4" />
+          No CVE alerts for selected vendors.
+        </div>
+      )}
+
+      {/* Patching Schedules */}
+      {relevantSchedules.length > 0 && (
+        <div>
+          <div className="flex items-center gap-2 mb-2">
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+              Patching Schedules
+            </span>
+          </div>
+          <div className="space-y-1.5">
+            {relevantSchedules.map((sched) => {
+              const vendor = vendors.find((v) => v.id === sched.vendorId);
+              const nextDate = new Date(sched.nextPatchDate);
+              const daysUntil = Math.ceil((nextDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+              return (
+                <div key={sched.vendorId} className="rounded-lg border border-border bg-muted/20 px-3 py-2.5">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        {vendor && (
+                          <span className="text-xs font-semibold text-foreground">{vendor.name}</span>
+                        )}
+                        <span className="text-xs text-muted-foreground">–</span>
+                        <span className="text-xs font-medium text-foreground">{sched.scheduleName}</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-0.5">{sched.description}</p>
+                    </div>
+                    <div className="shrink-0 text-right">
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground justify-end">
+                        <Clock className="h-3 w-3" />
+                        <span>{sched.frequency}</span>
+                      </div>
+                      <div
+                        className={cn(
+                          "text-xs font-medium mt-0.5",
+                          daysUntil <= 7 ? "text-orange-600" : "text-muted-foreground"
+                        )}
+                      >
+                        Next: {nextDate.toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                        {daysUntil <= 7 && ` (${daysUntil}d)`}
+                      </div>
+                      {sched.notesUrl && (
+                        <a
+                          href={sched.notesUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-0.5 text-xs text-primary hover:underline mt-0.5"
+                        >
+                          Notes <ExternalLink className="h-2.5 w-2.5" />
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {relevantSchedules.length === 0 && allCves.length === 0 && (
+        <p className="text-xs text-muted-foreground">
+          No patch schedule or CVE data for your selected vendors.
+        </p>
+      )}
     </div>
   );
 }
+
+// ─── Dashboard Page ───────────────────────────────────────────────────────────
 
 export default function DashboardPage() {
   const { selectedVendorIds } = useApp();
@@ -158,19 +651,13 @@ export default function DashboardPage() {
     (n) => selectedVendorIds.includes(n.vendorId) && (n.severity === "critical" || n.severity === "high")
   ).length;
 
-  // Compliance data derived from selected vendors
-  const relevantLicenses = licenseRenewals.filter((l) => selectedVendorIds.includes(l.vendorId));
-  const expiringLicenses = relevantLicenses.filter((l) => l.status === "expiring-soon");
-  const relevantEol = eolProducts.filter((e) => selectedVendorIds.includes(e.vendorId));
-  const patchRate = Math.round((patchCompliance.patchedWithinSLA / patchCompliance.totalEndpoints) * 100);
-
   if (selectedVendorIds.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[80vh] p-8 text-center">
         <Building2 className="h-16 w-16 text-muted-foreground mb-4" />
         <h1 className="text-2xl font-bold text-foreground mb-2">Welcome to RITHand</h1>
         <p className="text-muted-foreground max-w-md mb-6">
-          Get started by selecting the vendors you work with. Your personalized news feed will appear here.
+          Get started by selecting the vendors you work with. Your personalized dashboard will appear here.
         </p>
         <Link
           href="/vendors"
@@ -199,217 +686,27 @@ export default function DashboardPage() {
         </p>
       </div>
 
-      {/* Quick Stats Row */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-        <StatCard
-          icon={Activity}
-          label="Open Incidents"
-          value={incidentSummary.openIncidents}
-          subtext={`${incidentSummary.criticalOpen} critical`}
-          accent={incidentSummary.criticalOpen > 0 ? "red" : "green"}
-        />
-        <StatCard
-          icon={Monitor}
-          label="Patch Compliance"
-          value={`${patchRate}%`}
-          subtext={`${patchCompliance.overdueCritical} critical overdue`}
-          accent={patchRate >= patchCompliance.slaTarget ? "green" : "yellow"}
-        />
-        <StatCard
-          icon={CalendarClock}
-          label="Expiring Licenses"
-          value={expiringLicenses.length}
-          subtext={expiringLicenses.length > 0 ? "Action needed" : "All current"}
-          accent={expiringLicenses.length > 0 ? "yellow" : "green"}
-        />
-        <StatCard
-          icon={Clock}
-          label="Avg Resolution"
-          value={`${incidentSummary.avgResolutionHours}h`}
-          subtext={`${incidentSummary.resolvedThisMonth} resolved this month`}
-          accent="blue"
-        />
+      {/* Compliance Checklists */}
+      <div className="mb-6">
+        <CompliancePanel />
       </div>
 
-      {/* Compliance & Risk Section */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-        {/* Compliance Frameworks */}
-        <div className="rounded-xl border border-border bg-card p-4">
-          <div className="flex items-center gap-2 mb-4">
-            <ShieldCheck className="h-4 w-4 text-muted-foreground" />
-            <h2 className="text-sm font-semibold text-foreground">Compliance Posture</h2>
-          </div>
-          <div className="space-y-3">
-            {complianceFrameworks.map((fw) => (
-              <div key={fw.id} className="flex items-center gap-3">
-                <ComplianceScoreRing score={fw.score} size={40} />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-card-foreground">{fw.name}</span>
-                    <span
-                      className={cn(
-                        "px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase",
-                        fw.status === "compliant" && "bg-green-100 text-green-700",
-                        fw.status === "at-risk" && "bg-yellow-100 text-yellow-700",
-                        fw.status === "non-compliant" && "bg-red-100 text-red-700"
-                      )}
-                    >
-                      {fw.status.replace("-", " ")}
-                    </span>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Next audit:{" "}
-                    {new Date(fw.nextAudit).toLocaleDateString("en-US", {
-                      month: "short",
-                      day: "numeric",
-                      year: "numeric",
-                    })}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Right column: License Renewals + EOL */}
-        <div className="space-y-4">
-          {/* License Renewals */}
-          <div className="rounded-xl border border-border bg-card p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <CalendarClock className="h-4 w-4 text-muted-foreground" />
-              <h2 className="text-sm font-semibold text-foreground">Upcoming Renewals</h2>
-            </div>
-            {relevantLicenses.length === 0 ? (
-              <p className="text-xs text-muted-foreground">No license data for selected vendors.</p>
-            ) : (
-              <div className="space-y-2">
-                {relevantLicenses.slice(0, 4).map((lic) => {
-                  const vendor = vendors.find((v) => v.id === lic.vendorId);
-                  return (
-                    <div
-                      key={lic.id}
-                      className={cn(
-                        "flex items-center justify-between rounded-lg px-3 py-2 text-xs",
-                        lic.status === "expiring-soon"
-                          ? "bg-yellow-50 border border-yellow-200"
-                          : "bg-muted/50"
-                      )}
-                    >
-                      <div>
-                        <span className="font-medium text-card-foreground">{lic.product}</span>
-                        {vendor && (
-                          <span className="text-muted-foreground ml-1">({vendor.name})</span>
-                        )}
-                      </div>
-                      <div className="text-right shrink-0 ml-2">
-                        <div className={cn(
-                          "font-medium",
-                          lic.status === "expiring-soon" ? "text-yellow-700" : "text-muted-foreground"
-                        )}>
-                          {new Date(lic.renewalDate).toLocaleDateString("en-US", {
-                            month: "short",
-                            day: "numeric",
-                          })}
-                        </div>
-                        <div className="text-muted-foreground">
-                          ${lic.annualCost.toLocaleString()}/yr
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-
-          {/* EOL Tracker */}
-          <div className="rounded-xl border border-border bg-card p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <FileWarning className="h-4 w-4 text-muted-foreground" />
-              <h2 className="text-sm font-semibold text-foreground">End-of-Life Tracker</h2>
-            </div>
-            {relevantEol.length === 0 ? (
-              <p className="text-xs text-muted-foreground">No EOL items for selected vendors.</p>
-            ) : (
-              <div className="space-y-2">
-                {relevantEol.map((eol) => {
-                  const daysUntil = Math.ceil(
-                    (new Date(eol.eolDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
-                  );
-                  return (
-                    <div
-                      key={eol.id}
-                      className="flex items-center justify-between rounded-lg bg-muted/50 px-3 py-2 text-xs"
-                    >
-                      <div className="min-w-0">
-                        <span className="font-medium text-card-foreground">{eol.product}</span>
-                        <div className="text-muted-foreground flex items-center gap-1">
-                          <ChevronRight className="h-3 w-3" />
-                          {eol.replacementSuggestion}
-                        </div>
-                      </div>
-                      <div className="text-right shrink-0 ml-2">
-                        <div className={cn(
-                          "font-medium",
-                          daysUntil <= 180 ? "text-red-600" : "text-yellow-600"
-                        )}>
-                          {daysUntil}d remaining
-                        </div>
-                        <div className="text-muted-foreground">
-                          {eol.affectedAssets} asset{eol.affectedAssets !== 1 ? "s" : ""}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        </div>
+      {/* EOL Tracker */}
+      <div className="mb-6">
+        <EolTracker selectedVendorIds={selectedVendorIds} />
       </div>
 
-      {/* Patch Compliance Bar */}
-      <div className="rounded-xl border border-border bg-card p-4 mb-6">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <Monitor className="h-4 w-4 text-muted-foreground" />
-            <h2 className="text-sm font-semibold text-foreground">Patch Compliance Overview</h2>
-          </div>
-          <span className="text-xs text-muted-foreground">
-            SLA Target: {patchCompliance.slaTarget}%
-          </span>
-        </div>
-        <div className="flex items-center gap-4">
-          <div className="flex-1">
-            <div className="h-3 rounded-full bg-muted overflow-hidden">
-              <div
-                className={cn(
-                  "h-full rounded-full transition-all",
-                  patchRate >= patchCompliance.slaTarget ? "bg-green-500" : "bg-yellow-500"
-                )}
-                style={{ width: `${patchRate}%` }}
-              />
-            </div>
-          </div>
-          <span className={cn(
-            "text-sm font-bold",
-            patchRate >= patchCompliance.slaTarget ? "text-green-600" : "text-yellow-600"
-          )}>
-            {patchRate}%
-          </span>
-        </div>
-        <div className="flex gap-4 mt-3 text-xs text-muted-foreground">
-          <span>{patchCompliance.totalEndpoints.toLocaleString()} total endpoints</span>
-          <span className="text-red-500 font-medium">{patchCompliance.overdueCritical} critical overdue</span>
-          <span className="text-orange-500 font-medium">{patchCompliance.overdueHigh} high overdue</span>
-          <span className="text-yellow-500 font-medium">{patchCompliance.overdueMedium} medium overdue</span>
-        </div>
+      {/* Patching & CVE Alerts */}
+      <div className="mb-6">
+        <PatchingPanel selectedVendorIds={selectedVendorIds} />
       </div>
 
       {/* News Feed Section */}
       <div className="mb-4">
         <h2 className="text-lg font-semibold text-foreground">Vendor News Feed</h2>
-        <p className="text-xs text-muted-foreground mt-0.5">Latest advisories, updates, and alerts from your tracked vendors</p>
+        <p className="text-xs text-muted-foreground mt-0.5">
+          Latest advisories, updates, and alerts from your tracked vendors
+        </p>
       </div>
 
       {/* Search & Filters */}
