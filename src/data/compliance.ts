@@ -18,7 +18,360 @@ export interface ComplianceFramework {
   sections: ComplianceSection[];
 }
 
+// Frameworks sorted alphabetically by name
 export const complianceFrameworkTemplates: ComplianceFramework[] = [
+  {
+    id: "cis",
+    name: "CIS Controls v8",
+    description: "Center for Internet Security prioritized set of actions to defend against cyber threats.",
+    sections: [
+      {
+        id: "cis-ig1",
+        name: "IG1 – Basic Cyber Hygiene",
+        items: [
+          { id: "cis-ig1-1", label: "CIS Control 1: Enterprise asset inventory maintained" },
+          { id: "cis-ig1-2", label: "CIS Control 2: Software asset inventory maintained" },
+          { id: "cis-ig1-3", label: "CIS Control 3: Data protection policies in place" },
+          { id: "cis-ig1-4", label: "CIS Control 4: Secure configuration baseline applied" },
+          { id: "cis-ig1-5", label: "CIS Control 5: Account management enforced" },
+          { id: "cis-ig1-6", label: "CIS Control 6: Access control management" },
+        ],
+      },
+      {
+        id: "cis-ig2",
+        name: "IG2 – Foundational Controls",
+        items: [
+          { id: "cis-ig2-1", label: "CIS Control 7: Continuous vulnerability management active" },
+          { id: "cis-ig2-2", label: "CIS Control 8: Audit log management implemented" },
+          { id: "cis-ig2-3", label: "CIS Control 9: Email and web browser protections configured" },
+          { id: "cis-ig2-4", label: "CIS Control 10: Malware defenses deployed" },
+          { id: "cis-ig2-5", label: "CIS Control 11: Data recovery processes tested" },
+          { id: "cis-ig2-6", label: "CIS Control 12: Network infrastructure management" },
+        ],
+      },
+      {
+        id: "cis-ig3",
+        name: "IG3 – Organizational Controls",
+        items: [
+          { id: "cis-ig3-1", label: "CIS Control 14: Security awareness training program" },
+          { id: "cis-ig3-2", label: "CIS Control 16: Application software security" },
+          { id: "cis-ig3-3", label: "CIS Control 17: Incident response management" },
+          { id: "cis-ig3-4", label: "CIS Control 18: Penetration testing performed" },
+        ],
+      },
+    ],
+  },
+  {
+    id: "cmmc",
+    name: "CMMC 2.0",
+    description: "Cybersecurity Maturity Model Certification for DoD contractors handling CUI.",
+    sections: [
+      {
+        id: "cmmc-ac",
+        name: "Access Control (AC)",
+        items: [
+          { id: "cmmc-ac-1", label: "System access limited to authorized users" },
+          { id: "cmmc-ac-2", label: "CUI access limited to authorized users and processes" },
+          { id: "cmmc-ac-3", label: "External connections controlled" },
+          { id: "cmmc-ac-4", label: "Mobile device use policy enforced" },
+        ],
+      },
+      {
+        id: "cmmc-ia",
+        name: "Identification & Authentication (IA)",
+        items: [
+          { id: "cmmc-ia-1", label: "Unique user IDs enforced" },
+          { id: "cmmc-ia-2", label: "MFA required for privileged and non-privileged accounts" },
+          { id: "cmmc-ia-3", label: "Password complexity and rotation policy enforced" },
+        ],
+      },
+      {
+        id: "cmmc-ir",
+        name: "Incident Response (IR)",
+        items: [
+          { id: "cmmc-ir-1", label: "Incident response capability established" },
+          { id: "cmmc-ir-2", label: "Incidents tracked, documented, and reported" },
+          { id: "cmmc-ir-3", label: "Incident response tested" },
+        ],
+      },
+      {
+        id: "cmmc-cm",
+        name: "Configuration Management (CM)",
+        items: [
+          { id: "cmmc-cm-1", label: "Baseline configurations established and maintained" },
+          { id: "cmmc-cm-2", label: "Security configuration settings enforced" },
+          { id: "cmmc-cm-3", label: "Unnecessary programs and functions disabled" },
+        ],
+      },
+      {
+        id: "cmmc-si",
+        name: "System & Information Integrity (SI)",
+        items: [
+          { id: "cmmc-si-1", label: "Malicious code protection deployed" },
+          { id: "cmmc-si-2", label: "Security alerts monitored and acted upon" },
+          { id: "cmmc-si-3", label: "System flaws identified and remediated promptly" },
+        ],
+      },
+    ],
+  },
+  {
+    id: "gdpr",
+    name: "GDPR",
+    description: "EU General Data Protection Regulation for organizations handling personal data of EU residents.",
+    sections: [
+      {
+        id: "gdpr-lawful",
+        name: "Lawful Basis & Transparency",
+        items: [
+          { id: "gdpr-law-1", label: "Lawful basis for processing personal data documented" },
+          { id: "gdpr-law-2", label: "Privacy notices updated and accessible" },
+          { id: "gdpr-law-3", label: "Consent management processes implemented where required" },
+        ],
+      },
+      {
+        id: "gdpr-rights",
+        name: "Data Subject Rights",
+        items: [
+          { id: "gdpr-rights-1", label: "Process to handle Subject Access Requests (30-day SLA)" },
+          { id: "gdpr-rights-2", label: "Right to erasure (right to be forgotten) process in place" },
+          { id: "gdpr-rights-3", label: "Data portability capability available" },
+        ],
+      },
+      {
+        id: "gdpr-security",
+        name: "Data Security",
+        items: [
+          { id: "gdpr-sec-1", label: "Technical and organizational security measures documented" },
+          { id: "gdpr-sec-2", label: "Data Processing Agreements (DPAs) with all processors" },
+          { id: "gdpr-sec-3", label: "Data breach notification process (72-hour rule)" },
+        ],
+      },
+      {
+        id: "gdpr-dpia",
+        name: "Accountability & Governance",
+        items: [
+          { id: "gdpr-dpia-1", label: "Records of processing activities (ROPA) maintained" },
+          { id: "gdpr-dpia-2", label: "Data Protection Impact Assessments (DPIAs) performed for high-risk processing" },
+          { id: "gdpr-dpia-3", label: "DPO appointed (if required)" },
+        ],
+      },
+    ],
+  },
+  {
+    id: "hipaa",
+    name: "HIPAA",
+    description: "Health Insurance Portability and Accountability Act safeguards for protected health information.",
+    sections: [
+      {
+        id: "hipaa-admin",
+        name: "Administrative Safeguards",
+        items: [
+          { id: "hipaa-admin-1", label: "Security Officer designated" },
+          { id: "hipaa-admin-2", label: "Risk analysis conducted and documented" },
+          { id: "hipaa-admin-3", label: "Risk management plan implemented" },
+          { id: "hipaa-admin-4", label: "Workforce security training completed annually" },
+          { id: "hipaa-admin-5", label: "Sanction policy for violations documented" },
+          { id: "hipaa-admin-6", label: "Contingency plan (backup, DR, emergency access) in place" },
+        ],
+      },
+      {
+        id: "hipaa-physical",
+        name: "Physical Safeguards",
+        items: [
+          { id: "hipaa-physical-1", label: "Facility access controls documented" },
+          { id: "hipaa-physical-2", label: "Workstation use and security policies enforced" },
+          { id: "hipaa-physical-3", label: "Device and media controls (disposal, reuse) documented" },
+        ],
+      },
+      {
+        id: "hipaa-technical",
+        name: "Technical Safeguards",
+        items: [
+          { id: "hipaa-tech-1", label: "Unique user identification enforced for all PHI systems" },
+          { id: "hipaa-tech-2", label: "Automatic logoff configured on workstations" },
+          { id: "hipaa-tech-3", label: "PHI encrypted at rest and in transit" },
+          { id: "hipaa-tech-4", label: "Audit controls log access to PHI systems" },
+          { id: "hipaa-tech-5", label: "Data integrity controls implemented" },
+        ],
+      },
+      {
+        id: "hipaa-breach",
+        name: "Breach Notification",
+        items: [
+          { id: "hipaa-breach-1", label: "Breach notification procedures documented" },
+          { id: "hipaa-breach-2", label: "HHS reporting process defined (60-day rule)" },
+          { id: "hipaa-breach-3", label: "Business Associate Agreements (BAAs) in place for all relevant vendors" },
+        ],
+      },
+    ],
+  },
+  {
+    id: "iso27001",
+    name: "ISO 27001",
+    description: "International standard for information security management systems (ISMS).",
+    sections: [
+      {
+        id: "iso-context",
+        name: "Context & Scope",
+        items: [
+          { id: "iso-ctx-1", label: "Interested parties and their requirements identified" },
+          { id: "iso-ctx-2", label: "ISMS scope documented and approved" },
+          { id: "iso-ctx-3", label: "Information security policy approved by leadership" },
+        ],
+      },
+      {
+        id: "iso-risk",
+        name: "Risk Treatment",
+        items: [
+          { id: "iso-risk-1", label: "Information security risk assessment completed" },
+          { id: "iso-risk-2", label: "Risk treatment plan approved and implemented" },
+          { id: "iso-risk-3", label: "Statement of Applicability (SoA) documented" },
+        ],
+      },
+      {
+        id: "iso-controls",
+        name: "Annex A Controls",
+        items: [
+          { id: "iso-ctrl-1", label: "A.5 – Information security policies reviewed annually" },
+          { id: "iso-ctrl-2", label: "A.6 – Organization of information security roles defined" },
+          { id: "iso-ctrl-3", label: "A.8 – Asset management and classification in place" },
+          { id: "iso-ctrl-4", label: "A.9 – Access control policy implemented" },
+          { id: "iso-ctrl-5", label: "A.10 – Cryptography policy defined and enforced" },
+          { id: "iso-ctrl-6", label: "A.12 – Operations security (logging, monitoring, patching)" },
+          { id: "iso-ctrl-7", label: "A.16 – Information security incident management process active" },
+          { id: "iso-ctrl-8", label: "A.17 – Business continuity plan tested" },
+        ],
+      },
+      {
+        id: "iso-audit",
+        name: "Internal Audit & Review",
+        items: [
+          { id: "iso-audit-1", label: "Internal ISMS audit conducted at planned intervals" },
+          { id: "iso-audit-2", label: "Management review of ISMS performed" },
+          { id: "iso-audit-3", label: "Nonconformities and corrective actions tracked" },
+        ],
+      },
+    ],
+  },
+  {
+    id: "nist-csf",
+    name: "NIST CSF",
+    description: "NIST Cybersecurity Framework 2.0 for identifying, protecting, detecting, responding, and recovering.",
+    sections: [
+      {
+        id: "nist-govern",
+        name: "GOVERN",
+        items: [
+          { id: "nist-gv-1", label: "Organizational cybersecurity risk management strategy established" },
+          { id: "nist-gv-2", label: "Cybersecurity supply chain risk management program defined" },
+          { id: "nist-gv-3", label: "Cybersecurity roles and responsibilities assigned" },
+          { id: "nist-gv-4", label: "Cybersecurity policies, processes, and procedures documented" },
+          { id: "nist-gv-5", label: "Cybersecurity risks understood by senior leadership" },
+        ],
+      },
+      {
+        id: "nist-identify",
+        name: "IDENTIFY",
+        items: [
+          { id: "nist-id-1", label: "Asset inventory (hardware and software) maintained" },
+          { id: "nist-id-2", label: "Business environment and critical services documented" },
+          { id: "nist-id-3", label: "Governance policies and risk management strategy defined" },
+          { id: "nist-id-4", label: "Risk assessment performed and documented" },
+        ],
+      },
+      {
+        id: "nist-protect",
+        name: "PROTECT",
+        items: [
+          { id: "nist-pr-1", label: "Access management controls implemented (least privilege)" },
+          { id: "nist-pr-2", label: "Security awareness training program active" },
+          { id: "nist-pr-3", label: "Data at rest and in transit encrypted" },
+          { id: "nist-pr-4", label: "Patching and vulnerability management process in place" },
+          { id: "nist-pr-5", label: "Protective technology deployed (firewalls, EDR, etc.)" },
+        ],
+      },
+      {
+        id: "nist-detect",
+        name: "DETECT",
+        items: [
+          { id: "nist-de-1", label: "Anomalous activity monitoring and alerting configured" },
+          { id: "nist-de-2", label: "Security continuous monitoring processes implemented" },
+          { id: "nist-de-3", label: "Detection processes tested regularly" },
+        ],
+      },
+      {
+        id: "nist-respond",
+        name: "RESPOND",
+        items: [
+          { id: "nist-rs-1", label: "Incident response plan documented and communicated" },
+          { id: "nist-rs-2", label: "Incident response plan tested (tabletop or full exercise)" },
+          { id: "nist-rs-3", label: "External partners (legal, IR, PR) identified in advance" },
+        ],
+      },
+      {
+        id: "nist-recover",
+        name: "RECOVER",
+        items: [
+          { id: "nist-rc-1", label: "Recovery plan documented and tested" },
+          { id: "nist-rc-2", label: "Backup and restoration verified" },
+          { id: "nist-rc-3", label: "Post-incident lessons learned process defined" },
+        ],
+      },
+    ],
+  },
+  {
+    id: "pci-dss",
+    name: "PCI DSS",
+    description: "Payment Card Industry Data Security Standard for handling cardholder data.",
+    sections: [
+      {
+        id: "pci-network",
+        name: "Req 1-2 – Secure Network",
+        items: [
+          { id: "pci-net-1", label: "Firewalls installed and configured per policy" },
+          { id: "pci-net-2", label: "Vendor-supplied default passwords changed on all systems" },
+          { id: "pci-net-3", label: "Network segmentation between CDE and other networks" },
+        ],
+      },
+      {
+        id: "pci-data",
+        name: "Req 3-4 – Protect Cardholder Data",
+        items: [
+          { id: "pci-data-1", label: "Stored cardholder data minimized and protected" },
+          { id: "pci-data-2", label: "PAN masked when displayed" },
+          { id: "pci-data-3", label: "Cardholder data encrypted in transit (TLS 1.2+)" },
+        ],
+      },
+      {
+        id: "pci-vuln",
+        name: "Req 5-6 – Vulnerability Management",
+        items: [
+          { id: "pci-vuln-1", label: "Anti-malware deployed on all applicable systems" },
+          { id: "pci-vuln-2", label: "Critical patches applied within one month" },
+          { id: "pci-vuln-3", label: "Secure development practices followed" },
+        ],
+      },
+      {
+        id: "pci-access",
+        name: "Req 7-9 – Access Control",
+        items: [
+          { id: "pci-acc-1", label: "Access to cardholder data restricted by business need" },
+          { id: "pci-acc-2", label: "Unique IDs assigned to all users" },
+          { id: "pci-acc-3", label: "Physical access to CDE restricted and logged" },
+        ],
+      },
+      {
+        id: "pci-monitor",
+        name: "Req 10-11 – Monitor & Test",
+        items: [
+          { id: "pci-mon-1", label: "All access to CDE logged and audit logs retained 12 months" },
+          { id: "pci-mon-2", label: "Log reviews performed daily" },
+          { id: "pci-mon-3", label: "Quarterly internal vulnerability scans performed" },
+          { id: "pci-mon-4", label: "Annual penetration test completed" },
+        ],
+      },
+    ],
+  },
   {
     id: "soc2",
     name: "SOC 2 Type II",
@@ -80,347 +433,6 @@ export const complianceFrameworkTemplates: ComplianceFramework[] = [
           { id: "soc2-cc8-1", label: "Change management policy documented" },
           { id: "soc2-cc8-2", label: "Changes tested in non-production before deployment" },
           { id: "soc2-cc8-3", label: "Emergency change process defined and followed" },
-        ],
-      },
-    ],
-  },
-  {
-    id: "hipaa",
-    name: "HIPAA",
-    description: "Health Insurance Portability and Accountability Act safeguards for protected health information.",
-    sections: [
-      {
-        id: "hipaa-admin",
-        name: "Administrative Safeguards",
-        items: [
-          { id: "hipaa-admin-1", label: "Security Officer designated" },
-          { id: "hipaa-admin-2", label: "Risk analysis conducted and documented" },
-          { id: "hipaa-admin-3", label: "Risk management plan implemented" },
-          { id: "hipaa-admin-4", label: "Workforce security training completed annually" },
-          { id: "hipaa-admin-5", label: "Sanction policy for violations documented" },
-          { id: "hipaa-admin-6", label: "Contingency plan (backup, DR, emergency access) in place" },
-        ],
-      },
-      {
-        id: "hipaa-physical",
-        name: "Physical Safeguards",
-        items: [
-          { id: "hipaa-physical-1", label: "Facility access controls documented" },
-          { id: "hipaa-physical-2", label: "Workstation use and security policies enforced" },
-          { id: "hipaa-physical-3", label: "Device and media controls (disposal, reuse) documented" },
-        ],
-      },
-      {
-        id: "hipaa-technical",
-        name: "Technical Safeguards",
-        items: [
-          { id: "hipaa-tech-1", label: "Unique user identification enforced for all PHI systems" },
-          { id: "hipaa-tech-2", label: "Automatic logoff configured on workstations" },
-          { id: "hipaa-tech-3", label: "PHI encrypted at rest and in transit" },
-          { id: "hipaa-tech-4", label: "Audit controls log access to PHI systems" },
-          { id: "hipaa-tech-5", label: "Data integrity controls implemented" },
-        ],
-      },
-      {
-        id: "hipaa-breach",
-        name: "Breach Notification",
-        items: [
-          { id: "hipaa-breach-1", label: "Breach notification procedures documented" },
-          { id: "hipaa-breach-2", label: "HHS reporting process defined (60-day rule)" },
-          { id: "hipaa-breach-3", label: "Business Associate Agreements (BAAs) in place for all relevant vendors" },
-        ],
-      },
-    ],
-  },
-  {
-    id: "nist-csf",
-    name: "NIST CSF",
-    description: "NIST Cybersecurity Framework for identifying, protecting, detecting, responding, and recovering.",
-    sections: [
-      {
-        id: "nist-identify",
-        name: "Identify",
-        items: [
-          { id: "nist-id-1", label: "Asset inventory (hardware and software) maintained" },
-          { id: "nist-id-2", label: "Business environment and critical services documented" },
-          { id: "nist-id-3", label: "Governance policies and risk management strategy defined" },
-          { id: "nist-id-4", label: "Risk assessment performed and documented" },
-        ],
-      },
-      {
-        id: "nist-protect",
-        name: "Protect",
-        items: [
-          { id: "nist-pr-1", label: "Access management controls implemented (least privilege)" },
-          { id: "nist-pr-2", label: "Security awareness training program active" },
-          { id: "nist-pr-3", label: "Data at rest and in transit encrypted" },
-          { id: "nist-pr-4", label: "Patching and vulnerability management process in place" },
-          { id: "nist-pr-5", label: "Protective technology deployed (firewalls, EDR, etc.)" },
-        ],
-      },
-      {
-        id: "nist-detect",
-        name: "Detect",
-        items: [
-          { id: "nist-de-1", label: "Anomalous activity monitoring and alerting configured" },
-          { id: "nist-de-2", label: "Security continuous monitoring processes implemented" },
-          { id: "nist-de-3", label: "Detection processes tested regularly" },
-        ],
-      },
-      {
-        id: "nist-respond",
-        name: "Respond",
-        items: [
-          { id: "nist-rs-1", label: "Incident response plan documented and communicated" },
-          { id: "nist-rs-2", label: "Incident response plan tested (tabletop or full exercise)" },
-          { id: "nist-rs-3", label: "External partners (legal, IR, PR) identified in advance" },
-        ],
-      },
-      {
-        id: "nist-recover",
-        name: "Recover",
-        items: [
-          { id: "nist-rc-1", label: "Recovery plan documented and tested" },
-          { id: "nist-rc-2", label: "Backup and restoration verified" },
-          { id: "nist-rc-3", label: "Post-incident lessons learned process defined" },
-        ],
-      },
-    ],
-  },
-  {
-    id: "iso27001",
-    name: "ISO 27001",
-    description: "International standard for information security management systems (ISMS).",
-    sections: [
-      {
-        id: "iso-context",
-        name: "Context & Scope",
-        items: [
-          { id: "iso-ctx-1", label: "Interested parties and their requirements identified" },
-          { id: "iso-ctx-2", label: "ISMS scope documented and approved" },
-          { id: "iso-ctx-3", label: "Information security policy approved by leadership" },
-        ],
-      },
-      {
-        id: "iso-risk",
-        name: "Risk Treatment",
-        items: [
-          { id: "iso-risk-1", label: "Information security risk assessment completed" },
-          { id: "iso-risk-2", label: "Risk treatment plan approved and implemented" },
-          { id: "iso-risk-3", label: "Statement of Applicability (SoA) documented" },
-        ],
-      },
-      {
-        id: "iso-controls",
-        name: "Annex A Controls",
-        items: [
-          { id: "iso-ctrl-1", label: "A.5 – Information security policies reviewed annually" },
-          { id: "iso-ctrl-2", label: "A.6 – Organization of information security roles defined" },
-          { id: "iso-ctrl-3", label: "A.8 – Asset management and classification in place" },
-          { id: "iso-ctrl-4", label: "A.9 – Access control policy implemented" },
-          { id: "iso-ctrl-5", label: "A.10 – Cryptography policy defined and enforced" },
-          { id: "iso-ctrl-6", label: "A.12 – Operations security (logging, monitoring, patching)" },
-          { id: "iso-ctrl-7", label: "A.16 – Information security incident management process active" },
-          { id: "iso-ctrl-8", label: "A.17 – Business continuity plan tested" },
-        ],
-      },
-      {
-        id: "iso-audit",
-        name: "Internal Audit & Review",
-        items: [
-          { id: "iso-audit-1", label: "Internal ISMS audit conducted at planned intervals" },
-          { id: "iso-audit-2", label: "Management review of ISMS performed" },
-          { id: "iso-audit-3", label: "Nonconformities and corrective actions tracked" },
-        ],
-      },
-    ],
-  },
-  {
-    id: "pci-dss",
-    name: "PCI DSS",
-    description: "Payment Card Industry Data Security Standard for handling cardholder data.",
-    sections: [
-      {
-        id: "pci-network",
-        name: "Req 1-2 – Secure Network",
-        items: [
-          { id: "pci-net-1", label: "Firewalls installed and configured per policy" },
-          { id: "pci-net-2", label: "Vendor-supplied default passwords changed on all systems" },
-          { id: "pci-net-3", label: "Network segmentation between CDE and other networks" },
-        ],
-      },
-      {
-        id: "pci-data",
-        name: "Req 3-4 – Protect Cardholder Data",
-        items: [
-          { id: "pci-data-1", label: "Stored cardholder data minimized and protected" },
-          { id: "pci-data-2", label: "PAN masked when displayed" },
-          { id: "pci-data-3", label: "Cardholder data encrypted in transit (TLS 1.2+)" },
-        ],
-      },
-      {
-        id: "pci-vuln",
-        name: "Req 5-6 – Vulnerability Management",
-        items: [
-          { id: "pci-vuln-1", label: "Anti-malware deployed on all applicable systems" },
-          { id: "pci-vuln-2", label: "Critical patches applied within one month" },
-          { id: "pci-vuln-3", label: "Secure development practices followed" },
-        ],
-      },
-      {
-        id: "pci-access",
-        name: "Req 7-9 – Access Control",
-        items: [
-          { id: "pci-acc-1", label: "Access to cardholder data restricted by business need" },
-          { id: "pci-acc-2", label: "Unique IDs assigned to all users" },
-          { id: "pci-acc-3", label: "Physical access to CDE restricted and logged" },
-        ],
-      },
-      {
-        id: "pci-monitor",
-        name: "Req 10-11 – Monitor & Test",
-        items: [
-          { id: "pci-mon-1", label: "All access to CDE logged and audit logs retained 12 months" },
-          { id: "pci-mon-2", label: "Log reviews performed daily" },
-          { id: "pci-mon-3", label: "Quarterly internal vulnerability scans performed" },
-          { id: "pci-mon-4", label: "Annual penetration test completed" },
-        ],
-      },
-    ],
-  },
-  {
-    id: "cmmc",
-    name: "CMMC 2.0",
-    description: "Cybersecurity Maturity Model Certification for DoD contractors handling CUI.",
-    sections: [
-      {
-        id: "cmmc-ac",
-        name: "Access Control (AC)",
-        items: [
-          { id: "cmmc-ac-1", label: "System access limited to authorized users" },
-          { id: "cmmc-ac-2", label: "CUI access limited to authorized users and processes" },
-          { id: "cmmc-ac-3", label: "External connections controlled" },
-          { id: "cmmc-ac-4", label: "Mobile device use policy enforced" },
-        ],
-      },
-      {
-        id: "cmmc-ia",
-        name: "Identification & Authentication (IA)",
-        items: [
-          { id: "cmmc-ia-1", label: "Unique user IDs enforced" },
-          { id: "cmmc-ia-2", label: "MFA required for privileged and non-privileged accounts" },
-          { id: "cmmc-ia-3", label: "Password complexity and rotation policy enforced" },
-        ],
-      },
-      {
-        id: "cmmc-ir",
-        name: "Incident Response (IR)",
-        items: [
-          { id: "cmmc-ir-1", label: "Incident response capability established" },
-          { id: "cmmc-ir-2", label: "Incidents tracked, documented, and reported" },
-          { id: "cmmc-ir-3", label: "Incident response tested" },
-        ],
-      },
-      {
-        id: "cmmc-cm",
-        name: "Configuration Management (CM)",
-        items: [
-          { id: "cmmc-cm-1", label: "Baseline configurations established and maintained" },
-          { id: "cmmc-cm-2", label: "Security configuration settings enforced" },
-          { id: "cmmc-cm-3", label: "Unnecessary programs and functions disabled" },
-        ],
-      },
-      {
-        id: "cmmc-si",
-        name: "System & Information Integrity (SI)",
-        items: [
-          { id: "cmmc-si-1", label: "Malicious code protection deployed" },
-          { id: "cmmc-si-2", label: "Security alerts monitored and acted upon" },
-          { id: "cmmc-si-3", label: "System flaws identified and remediated promptly" },
-        ],
-      },
-    ],
-  },
-  {
-    id: "cis",
-    name: "CIS Controls v8",
-    description: "Center for Internet Security prioritized set of actions to defend against cyber threats.",
-    sections: [
-      {
-        id: "cis-ig1",
-        name: "IG1 – Basic Cyber Hygiene",
-        items: [
-          { id: "cis-ig1-1", label: "CIS Control 1: Enterprise asset inventory maintained" },
-          { id: "cis-ig1-2", label: "CIS Control 2: Software asset inventory maintained" },
-          { id: "cis-ig1-3", label: "CIS Control 3: Data protection policies in place" },
-          { id: "cis-ig1-4", label: "CIS Control 4: Secure configuration baseline applied" },
-          { id: "cis-ig1-5", label: "CIS Control 5: Account management enforced" },
-          { id: "cis-ig1-6", label: "CIS Control 6: Access control management" },
-        ],
-      },
-      {
-        id: "cis-ig2",
-        name: "IG2 – Foundational Controls",
-        items: [
-          { id: "cis-ig2-1", label: "CIS Control 7: Continuous vulnerability management active" },
-          { id: "cis-ig2-2", label: "CIS Control 8: Audit log management implemented" },
-          { id: "cis-ig2-3", label: "CIS Control 9: Email and web browser protections configured" },
-          { id: "cis-ig2-4", label: "CIS Control 10: Malware defenses deployed" },
-          { id: "cis-ig2-5", label: "CIS Control 11: Data recovery processes tested" },
-          { id: "cis-ig2-6", label: "CIS Control 12: Network infrastructure management" },
-        ],
-      },
-      {
-        id: "cis-ig3",
-        name: "IG3 – Organizational Controls",
-        items: [
-          { id: "cis-ig3-1", label: "CIS Control 14: Security awareness training program" },
-          { id: "cis-ig3-2", label: "CIS Control 16: Application software security" },
-          { id: "cis-ig3-3", label: "CIS Control 17: Incident response management" },
-          { id: "cis-ig3-4", label: "CIS Control 18: Penetration testing performed" },
-        ],
-      },
-    ],
-  },
-  {
-    id: "gdpr",
-    name: "GDPR",
-    description: "EU General Data Protection Regulation for organizations handling personal data of EU residents.",
-    sections: [
-      {
-        id: "gdpr-lawful",
-        name: "Lawful Basis & Transparency",
-        items: [
-          { id: "gdpr-law-1", label: "Lawful basis for processing personal data documented" },
-          { id: "gdpr-law-2", label: "Privacy notices updated and accessible" },
-          { id: "gdpr-law-3", label: "Consent management processes implemented where required" },
-        ],
-      },
-      {
-        id: "gdpr-rights",
-        name: "Data Subject Rights",
-        items: [
-          { id: "gdpr-rights-1", label: "Process to handle Subject Access Requests (30-day SLA)" },
-          { id: "gdpr-rights-2", label: "Right to erasure (right to be forgotten) process in place" },
-          { id: "gdpr-rights-3", label: "Data portability capability available" },
-        ],
-      },
-      {
-        id: "gdpr-security",
-        name: "Data Security",
-        items: [
-          { id: "gdpr-sec-1", label: "Technical and organizational security measures documented" },
-          { id: "gdpr-sec-2", label: "Data Processing Agreements (DPAs) with all processors" },
-          { id: "gdpr-sec-3", label: "Data breach notification process (72-hour rule)" },
-        ],
-      },
-      {
-        id: "gdpr-dpia",
-        name: "Accountability & Governance",
-        items: [
-          { id: "gdpr-dpia-1", label: "Records of processing activities (ROPA) maintained" },
-          { id: "gdpr-dpia-2", label: "Data Protection Impact Assessments (DPIAs) performed for high-risk processing" },
-          { id: "gdpr-dpia-3", label: "DPO appointed (if required)" },
         ],
       },
     ],

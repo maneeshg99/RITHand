@@ -1,7 +1,5 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { Sidebar } from "@/components/Sidebar";
-import { AppProvider } from "@/context/AppContext";
 
 export const metadata: Metadata = {
   title: "RITHand - Right IT Hand",
@@ -16,14 +14,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="antialiased">
-        <AppProvider>
-          <div className="flex min-h-screen">
-            <Sidebar />
-            <main className="flex-1 md:pt-0 pt-14">{children}</main>
-          </div>
-        </AppProvider>
-      </body>
+      <body className="antialiased">{children}</body>
     </html>
   );
 }

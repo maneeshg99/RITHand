@@ -6,30 +6,49 @@ import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
   Building2,
+  FolderOpen,
+  CheckSquare,
+  AlertTriangle,
   Bookmark,
   Settings,
   Shield,
+  ShieldCheck,
   Menu,
   X,
 } from "lucide-react";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
-const navItems = [
-  { href: "/", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/vendors", label: "Vendors", icon: Building2 },
-  { href: "/bookmarks", label: "Bookmarks", icon: Bookmark },
-  { href: "/settings", label: "Settings", icon: Settings },
+const baseNavItems = [
+  { href: "/app", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/app/clients", label: "Clients", icon: FolderOpen },
+  { href: "/app/tasks", label: "Tasks", icon: CheckSquare },
+  { href: "/app/vulnerabilities", label: "Vulnerabilities", icon: AlertTriangle },
+  { href: "/app/vendors", label: "Vendors", icon: Building2 },
+  { href: "/app/bookmarks", label: "Bookmarks", icon: Bookmark },
+  { href: "/app/settings", label: "Settings", icon: Settings },
 ];
 
-export function Sidebar() {
+const adminNavItem = {
+  href: "/app/admin",
+  label: "Admin",
+  icon: ShieldCheck,
+};
+
+export function Sidebar({ isAdmin = false }: { isAdmin?: boolean }) {
+  const navItems = isAdmin
+    ? [...baseNavItems, adminNavItem]
+    : baseNavItems;
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const navContent = (
     <nav className="flex flex-col gap-1 px-3 py-4">
       {navItems.map((item) => {
-        const isActive = pathname === item.href;
+        const isActive =
+          item.href === "/app"
+            ? pathname === "/app"
+            : pathname.startsWith(item.href);
         return (
           <Link
             key={item.href}
