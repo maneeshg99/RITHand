@@ -1,6 +1,9 @@
 "use server";
 
-import { createServerSupabaseClient } from "@/lib/supabase/server";
+import {
+  createServerSupabaseClient,
+  createServiceRoleClient,
+} from "@/lib/supabase/server";
 import {
   requireOrgAdmin,
   requireAppAdmin,
@@ -12,11 +15,13 @@ import { revalidatePath } from "next/cache";
 // ─── Client CRUD (org admin) ─────────────────────────────────────────────────
 
 export async function createClient(formData: FormData) {
-  const { orgId } = await requireOrgAdmin();
+  const membership = await requireOrgAdmin();
+  if (!membership.orgId) return { error: "No organization. Create one first and assign yourself." };
+
   const supabase = await createServerSupabaseClient();
 
   const { error } = await supabase.from("clients").insert({
-    org_id: orgId,
+    org_id: membership.orgId,
     name: formData.get("name") as string,
     industry: (formData.get("industry") as string) || null,
     primary_contact: (formData.get("primary_contact") as string) || null,
@@ -32,7 +37,8 @@ export async function createClient(formData: FormData) {
 }
 
 export async function updateClient(clientId: string, formData: FormData) {
-  await requireOrgAdmin();
+  const membership = await requireOrgAdmin();
+  if (!membership.orgId) return { error: "No organization. Assign yourself to one first." };
   const supabase = await createServerSupabaseClient();
 
   const { error } = await supabase
@@ -46,7 +52,8 @@ export async function updateClient(clientId: string, formData: FormData) {
       status: (formData.get("status") as string) || "active",
       updated_at: new Date().toISOString(),
     })
-    .eq("id", clientId);
+    .eq("id", clientId)
+    .eq("org_id", membership.orgId);
 
   if (error) return { error: error.message };
 
@@ -56,13 +63,15 @@ export async function updateClient(clientId: string, formData: FormData) {
 }
 
 export async function deleteClient(clientId: string) {
-  await requireOrgAdmin();
+  const membership = await requireOrgAdmin();
+  if (!membership.orgId) return { error: "No organization. Assign yourself to one first." };
   const supabase = await createServerSupabaseClient();
 
   const { error } = await supabase
     .from("clients")
     .delete()
-    .eq("id", clientId);
+    .eq("id", clientId)
+    .eq("org_id", membership.orgId);
 
   if (error) return { error: error.message };
 
@@ -141,7 +150,6 @@ export async function getClients() {
 
   const supabase = await createServerSupabaseClient();
 
-  // App admins can optionally see all clients, but scope to their org if they have one
   if (ctx.membership) {
     const { data, error } = await supabase
       .from("clients")
@@ -218,12 +226,13 @@ export async function getOrgMembers() {
 }
 
 // ─── App Admin: Organization Management ──────────────────────────────────────
+// All app-admin operations use service role client to bypass RLS recursion.
 
 export async function getAllOrganizations() {
   await requireAppAdmin();
-  const supabase = await createServerSupabaseClient();
+  const db = createServiceRoleClient();
 
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from("organizations")
     .select("*, organization_members(count)")
     .order("name");
@@ -233,39 +242,26 @@ export async function getAllOrganizations() {
 }
 
 export async function createOrganizationAsAdmin(name: string) {
-  const user = await requireAppAdmin();
-  const supabase = await createServerSupabaseClient();
+  await requireAppAdmin();
+  const db = createServiceRoleClient();
 
-  // Try the RPC function first
-  const { data: orgId, error: rpcError } = await supabase.rpc(
-    "admin_create_organization",
-    {
-      org_name: name,
-      admin_user_id: null,
-    }
-  );
+  const { data: org, error } = await db
+    .from("organizations")
+    .insert({ name })
+    .select()
+    .single();
 
-  if (rpcError) {
-    // Fallback: direct insert
-    const { data: org, error } = await supabase
-      .from("organizations")
-      .insert({ name })
-      .select()
-      .single();
-    if (error) return { error: error.message };
-    revalidatePath("/app/admin");
-    return { data: org };
-  }
+  if (error) return { error: error.message };
 
   revalidatePath("/app/admin");
-  return { data: { id: orgId, name } };
+  return { data: org };
 }
 
 export async function deleteOrganization(orgId: string) {
   await requireAppAdmin();
-  const supabase = await createServerSupabaseClient();
+  const db = createServiceRoleClient();
 
-  const { error } = await supabase
+  const { error } = await db
     .from("organizations")
     .delete()
     .eq("id", orgId);
@@ -278,13 +274,11 @@ export async function deleteOrganization(orgId: string) {
 
 export async function getAllUsers() {
   await requireAppAdmin();
-  const supabase = await createServerSupabaseClient();
+  const db = createServiceRoleClient();
 
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from("profiles")
-    .select(
-      "id, full_name, app_role, onboarded, created_at"
-    )
+    .select("id, full_name, app_role, onboarded, created_at")
     .order("created_at", { ascending: false });
 
   if (error) return { error: error.message, data: [] };
@@ -297,9 +291,9 @@ export async function assignUserToOrg(
   role: "admin" | "member"
 ) {
   await requireAppAdmin();
-  const supabase = await createServerSupabaseClient();
+  const db = createServiceRoleClient();
 
-  const { error } = await supabase.from("organization_members").upsert(
+  const { error } = await db.from("organization_members").upsert(
     {
       organization_id: orgId,
       user_id: userId,
@@ -316,9 +310,9 @@ export async function assignUserToOrg(
 
 export async function removeUserFromOrg(userId: string, orgId: string) {
   await requireAppAdmin();
-  const supabase = await createServerSupabaseClient();
+  const db = createServiceRoleClient();
 
-  const { error } = await supabase
+  const { error } = await db
     .from("organization_members")
     .delete()
     .eq("user_id", userId)
@@ -330,12 +324,17 @@ export async function removeUserFromOrg(userId: string, orgId: string) {
   return { success: true };
 }
 
-export async function getAdminLevel(): Promise<"app_admin" | "org_admin" | null> {
-  const isApp = await isAppAdmin();
-  if (isApp) return "app_admin";
-
+export async function getAdminLevel(): Promise<{
+  level: "app_admin" | "org_admin" | null;
+  hasOrg: boolean;
+}> {
   const ctx = await getFullUserContext();
-  if (ctx?.membership?.role === "admin") return "org_admin";
+  if (!ctx) return { level: null, hasOrg: false };
 
-  return null;
+  const hasOrg = !!ctx.membership;
+
+  if (ctx.appRole === "app_admin") return { level: "app_admin", hasOrg };
+  if (ctx.membership?.role === "admin") return { level: "org_admin", hasOrg };
+
+  return { level: null, hasOrg };
 }

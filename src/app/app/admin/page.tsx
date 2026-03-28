@@ -73,6 +73,7 @@ export default function AdminPage() {
   const [adminLevel, setAdminLevel] = useState<
     "app_admin" | "org_admin" | null
   >(null);
+  const [hasOrg, setHasOrg] = useState(false);
   const [tab, setTab] = useState<TabType>("clients");
   const [clients, setClients] = useState<Client[]>([]);
   const [members, setMembers] = useState<OrgMember[]>([]);
@@ -86,21 +87,31 @@ export default function AdminPage() {
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const level = await getAdminLevel();
+      const { level, hasOrg: userHasOrg } = await getAdminLevel();
       setAdminLevel(level);
+      setHasOrg(userHasOrg);
 
       if (level === "app_admin") {
         setTab("organizations");
-        const [clientsRes, membersRes, orgsRes, usersRes] = await Promise.all([
-          getClients(),
-          getOrgMembers(),
+        const promises: Promise<unknown>[] = [
           getAllOrganizations(),
           getAllUsers(),
-        ]);
-        if (clientsRes.data) setClients(clientsRes.data as Client[]);
-        if (membersRes.data) setMembers(membersRes.data as OrgMember[]);
-        if (orgsRes.data) setOrganizations(orgsRes.data as Organization[]);
-        if (usersRes.data) setAllUsers(usersRes.data as AppUser[]);
+        ];
+        // Only fetch org-scoped data if the app admin has an org
+        if (userHasOrg) {
+          promises.push(getClients(), getOrgMembers());
+        }
+        const results = await Promise.all(promises);
+        const orgsRes = results[0] as { data?: Organization[] };
+        const usersRes = results[1] as { data?: AppUser[] };
+        if (orgsRes.data) setOrganizations(orgsRes.data);
+        if (usersRes.data) setAllUsers(usersRes.data);
+        if (userHasOrg) {
+          const clientsRes = results[2] as { data?: Client[] };
+          const membersRes = results[3] as { data?: OrgMember[] };
+          if (clientsRes?.data) setClients(clientsRes.data);
+          if (membersRes?.data) setMembers(membersRes.data);
+        }
       } else {
         const [clientsRes, membersRes] = await Promise.all([
           getClients(),
@@ -252,14 +263,22 @@ export default function AdminPage() {
           setError={setError}
         />
       ) : tab === "clients" ? (
-        <ClientsTab
-          clients={clients}
-          showNewClient={showNewClient}
-          setShowNewClient={setShowNewClient}
-          onCreateClient={handleCreateClient}
-        />
+        !hasOrg && adminLevel === "app_admin" ? (
+          <NoOrgMessage />
+        ) : (
+          <ClientsTab
+            clients={clients}
+            showNewClient={showNewClient}
+            setShowNewClient={setShowNewClient}
+            onCreateClient={handleCreateClient}
+          />
+        )
       ) : (
-        <OrgUsersTab members={members} />
+        !hasOrg && adminLevel === "app_admin" ? (
+          <NoOrgMessage />
+        ) : (
+          <OrgUsersTab members={members} />
+        )
       )}
     </div>
   );
@@ -525,6 +544,23 @@ function AllUsersTab({
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+// ─── No Org Message (for app admins without org membership) ──────────────────
+
+function NoOrgMessage() {
+  return (
+    <div className="text-center py-12">
+      <Globe className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+      <p className="text-sm font-medium text-foreground mb-1">
+        No organization selected
+      </p>
+      <p className="text-sm text-muted-foreground max-w-sm mx-auto">
+        To manage clients and users, first create an organization in the
+        Organizations tab, then assign yourself to it in the All Users tab.
+      </p>
     </div>
   );
 }
