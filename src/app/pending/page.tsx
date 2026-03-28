@@ -1,16 +1,34 @@
 "use client";
 
-import { Shield, Clock, LogOut } from "lucide-react";
+import { useState } from "react";
+import { Shield, Clock, LogOut, Wrench } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { bootstrapAsAppAdmin } from "./actions";
 
 export default function PendingPage() {
   const router = useRouter();
+  const [bootstrapping, setBootstrapping] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSignOut = async () => {
     const { createClient } = await import("@/lib/supabase/client");
     const supabase = createClient();
     await supabase.auth.signOut();
     router.push("/");
+  };
+
+  const handleBootstrapAdmin = async () => {
+    setBootstrapping(true);
+    setError(null);
+    const result = await bootstrapAsAppAdmin();
+    if (result.error) {
+      setError(result.error);
+      setBootstrapping(false);
+    } else {
+      // Redirect to the app — they're now an app admin
+      router.push("/app");
+      router.refresh();
+    }
   };
 
   return (
@@ -45,9 +63,18 @@ export default function PendingPage() {
             </ul>
           </div>
 
-          <div className="flex gap-3">
+          {error && (
+            <div className="mb-4 p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
+              {error}
+            </div>
+          )}
+
+          <div className="flex gap-3 mb-4">
             <button
-              onClick={() => router.refresh()}
+              onClick={() => {
+                router.push("/app");
+                router.refresh();
+              }}
               className="flex-1 px-4 py-2 text-sm font-medium rounded-lg bg-primary text-primary-foreground hover:opacity-90 transition-opacity"
             >
               Check Again
@@ -58,6 +85,21 @@ export default function PendingPage() {
             >
               <LogOut className="h-3.5 w-3.5" />
               Sign Out
+            </button>
+          </div>
+
+          {/* Test environment: Bootstrap as App Admin */}
+          <div className="border-t border-border pt-4 mt-4">
+            <p className="text-xs text-muted-foreground mb-3">
+              Test environment — set yourself as Application Admin
+            </p>
+            <button
+              onClick={handleBootstrapAdmin}
+              disabled={bootstrapping}
+              className="flex items-center justify-center gap-2 w-full px-4 py-2 text-sm font-medium rounded-lg border border-primary/30 text-primary hover:bg-primary/5 transition-colors disabled:opacity-50"
+            >
+              <Wrench className="h-3.5 w-3.5" />
+              {bootstrapping ? "Setting up..." : "Become App Admin"}
             </button>
           </div>
         </div>

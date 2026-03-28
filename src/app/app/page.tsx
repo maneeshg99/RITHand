@@ -85,21 +85,37 @@ export default function DashboardPage() {
     );
   }
 
-  // Not authenticated - redirect to onboarding
+  // No org — app admins see admin prompt, regular users see onboarding
   if (!data?.hasOrg) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[80vh] p-8 text-center">
         <AlertCircle className="h-16 w-16 text-muted-foreground mb-4" />
         <h1 className="text-2xl font-bold text-foreground mb-2">Welcome to RITHand</h1>
-        <p className="text-muted-foreground max-w-md mb-6">
-          Let's get you set up with your organization. Complete the onboarding process to get started.
-        </p>
-        <Link
-          href="/onboarding"
-          className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-primary text-primary-foreground font-medium hover:opacity-90 transition-opacity"
-        >
-          Start Onboarding
-        </Link>
+        {data?.isAdmin ? (
+          <>
+            <p className="text-muted-foreground max-w-md mb-6">
+              You&apos;re signed in as an Application Admin. Create an organization from the Admin Panel to get started, then assign yourself to it.
+            </p>
+            <Link
+              href="/app/admin"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-primary text-primary-foreground font-medium hover:opacity-90 transition-opacity"
+            >
+              Go to Admin Panel
+            </Link>
+          </>
+        ) : (
+          <>
+            <p className="text-muted-foreground max-w-md mb-6">
+              Let&apos;s get you set up with your organization. Complete the onboarding process to get started.
+            </p>
+            <Link
+              href="/onboarding"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-primary text-primary-foreground font-medium hover:opacity-90 transition-opacity"
+            >
+              Start Onboarding
+            </Link>
+          </>
+        )}
       </div>
     );
   }

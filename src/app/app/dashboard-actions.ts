@@ -1,7 +1,7 @@
 "use server";
 
 import { createServerSupabaseClient } from "@/lib/supabase/server";
-import { getCurrentUserOrgMembership, isCurrentUserOrgAdmin } from "@/lib/auth/roles";
+import { getCurrentUserOrgMembership, isCurrentUserOrgAdmin, isAppAdmin } from "@/lib/auth/roles";
 
 export interface DashboardData {
   clientsCount: number;
@@ -38,8 +38,9 @@ export interface DashboardData {
 export async function getDashboardData(): Promise<DashboardData> {
   const membership = await getCurrentUserOrgMembership();
 
-  // If no org membership, return empty state
+  // If no org membership, check if app admin
   if (!membership) {
+    const appAdmin = await isAppAdmin();
     return {
       clientsCount: 0,
       openTasksCount: 0,
@@ -50,7 +51,7 @@ export async function getDashboardData(): Promise<DashboardData> {
       recentTasks: [],
       topVulnerabilities: [],
       nextMeetings: [],
-      isAdmin: false,
+      isAdmin: appAdmin,
       hasOrg: false,
     };
   }

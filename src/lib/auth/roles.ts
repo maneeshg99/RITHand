@@ -151,11 +151,19 @@ export async function requireAppAdmin() {
 /**
  * Require the current user to be an org admin (or app admin).
  * Throws an error if not — use in Server Actions/API routes.
+ * App admins without org membership get a synthetic membership object.
  */
 export async function requireOrgAdmin() {
   const ctx = await getFullUserContext();
   if (!ctx) throw new Error("Not authenticated");
-  if (ctx.appRole === "app_admin" && ctx.membership) return ctx.membership;
+
+  // App admins always pass — return real membership or synthetic one
+  if (ctx.appRole === "app_admin") {
+    if (ctx.membership) return ctx.membership;
+    // Synthetic membership for app admins with no org
+    return { userId: ctx.user.id, orgId: "", role: "admin" as OrgRole };
+  }
+
   if (!ctx.membership || ctx.membership.role !== "admin") {
     throw new Error("Unauthorized: admin access required");
   }
