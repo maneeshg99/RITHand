@@ -1,374 +1,189 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
-import {
-  Monitor,
-  AlertTriangle,
-  Shield,
-  Calendar,
-  Users,
-  Lock,
-  Zap,
-  TrendingUp,
-  CheckCircle,
-} from "lucide-react";
+import { Shield, AlertCircle, CheckCircle } from "lucide-react";
+import { signIn, signInWithMagicLink } from "./login/actions";
 
-export default function LandingPage() {
+export default function HomePage() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [useMagicLink, setUseMagicLink] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [magicLinkSent, setMagicLinkSent] = useState(false);
+
+  const handlePasswordSignIn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+
+    const result = await signIn(email, password);
+    if (result?.error) {
+      setError(result.error);
+      setLoading(false);
+    }
+  };
+
+  const handleMagicLinkSignIn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+
+    const result = await signInWithMagicLink(email);
+    if (result?.error) {
+      setError(result.error);
+      setLoading(false);
+    } else if (result?.success) {
+      setMagicLinkSent(true);
+      setLoading(false);
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-950 to-slate-900">
-      {/* Header / Navigation */}
-      <header className="border-b border-slate-800 bg-slate-950/50 backdrop-blur">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Shield className="h-6 w-6 text-blue-500" />
-            <span className="text-xl font-bold text-white">RITHand</span>
+    <div className="min-h-screen bg-background flex items-center justify-center px-4">
+      <div className="w-full max-w-md">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <div className="flex items-center justify-center gap-2 mb-4">
+            <Shield className="h-8 w-8 text-primary" />
+            <span className="text-2xl font-bold text-foreground">RITHand</span>
           </div>
-          <nav className="hidden md:flex items-center gap-8">
-            <a href="#features" className="text-slate-300 hover:text-white transition">
-              Features
-            </a>
-            <a href="#personas" className="text-slate-300 hover:text-white transition">
-              For You
-            </a>
-            <a href="#pricing" className="text-slate-300 hover:text-white transition">
-              Pricing
-            </a>
-          </nav>
-          <div className="flex items-center gap-3">
-            <Link
-              href="/login"
-              className="text-slate-300 hover:text-white transition text-sm font-medium"
-            >
-              Sign In
-            </Link>
-            <Link
-              href="/signup"
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition"
-            >
-              Start Free
-            </Link>
-          </div>
+          <p className="text-muted-foreground">
+            Right IT Hand — Your vendor intelligence dashboard
+          </p>
         </div>
-      </header>
 
-      {/* Hero Section */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-32">
-        <div className="grid md:grid-cols-2 gap-12 items-center">
-          <div>
-            <h1 className="text-4xl md:text-5xl font-bold text-white mb-6 leading-tight">
-              Stop chasing vendor alerts.
-              <span className="text-blue-500"> Start staying ahead of them.</span>
-            </h1>
-            <p className="text-lg text-slate-400 mb-8 leading-relaxed">
-              Aggregate vendor intelligence from 28+ technology partners in one
-              unified dashboard. Monitor CVEs, compliance requirements, and EOL
-              dates without the alert fatigue.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-3">
-              <Link
-                href="/signup"
-                className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition text-center"
-              >
-                Start for Free
-              </Link>
+        {/* Card */}
+        <div className="rounded-xl border border-border bg-card p-8 shadow-sm">
+          {magicLinkSent ? (
+            <div className="space-y-4">
+              <div className="flex items-center gap-3 bg-green-50 border border-green-200 rounded-lg p-4 [data-theme='dark']:bg-green-900/20 [data-theme='dark']:border-green-800">
+                <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" />
+                <div>
+                  <p className="text-sm font-medium text-green-700 [data-theme='dark']:text-green-400">
+                    Magic link sent!
+                  </p>
+                  <p className="text-xs text-green-600 [data-theme='dark']:text-green-500">
+                    Check your email for a sign-in link
+                  </p>
+                </div>
+              </div>
               <button
-                onClick={() =>
-                  document
-                    .getElementById("features")
-                    ?.scrollIntoView({ behavior: "smooth" })
-                }
-                className="px-6 py-3 border border-slate-600 hover:border-slate-400 text-white rounded-lg font-medium transition text-center"
+                onClick={() => {
+                  setMagicLinkSent(false);
+                  setEmail("");
+                }}
+                className="w-full px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition"
               >
-                See How It Works
+                Try a different email
               </button>
             </div>
-          </div>
-          <div className="bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-xl border border-slate-700 p-8 md:p-12">
-            <div className="aspect-video bg-slate-800 rounded-lg flex items-center justify-center">
-              <Monitor className="h-16 w-16 text-slate-600" />
-            </div>
-          </div>
-        </div>
-      </section>
+          ) : (
+            <>
+              <h1 className="text-xl font-semibold text-foreground mb-6">
+                Sign In
+              </h1>
 
-      {/* Problem Section */}
-      <section className="bg-slate-900/50 border-y border-slate-800 py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold text-white mb-12 text-center">
-            Your vendor stack is a full-time job
-          </h2>
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="bg-slate-800/50 rounded-lg p-6 border border-slate-700">
-              <AlertTriangle className="h-8 w-8 text-red-500 mb-4" />
-              <h3 className="text-lg font-semibold text-white mb-2">Vendor Sprawl</h3>
-              <p className="text-slate-400">
-                Managing notifications from 20+ vendors across different
-                channels is chaotic and error-prone.
-              </p>
-            </div>
-            <div className="bg-slate-800/50 rounded-lg p-6 border border-slate-700">
-              <Zap className="h-8 w-8 text-yellow-500 mb-4" />
-              <h3 className="text-lg font-semibold text-white mb-2">Alert Fatigue</h3>
-              <p className="text-slate-400">
-                Critical CVEs get buried in noise. Noise gets ignored. Critical
-                issues slip through the cracks.
-              </p>
-            </div>
-            <div className="bg-slate-800/50 rounded-lg p-6 border border-slate-700">
-              <Lock className="h-8 w-8 text-purple-500 mb-4" />
-              <h3 className="text-lg font-semibold text-white mb-2">
-                Compliance Chaos
-              </h3>
-              <p className="text-slate-400">
-                Tracking multiple compliance frameworks across your vendor
-                portfolio is fragmented and manual.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
+              {error && (
+                <div className="flex items-center gap-3 bg-red-50 border border-red-200 rounded-lg p-3 mb-6 [data-theme='dark']:bg-red-900/20 [data-theme='dark']:border-red-800">
+                  <AlertCircle className="h-4 w-4 text-red-500 flex-shrink-0" />
+                  <p className="text-sm text-red-600 [data-theme='dark']:text-red-400">
+                    {error}
+                  </p>
+                </div>
+              )}
 
-      {/* Features Section */}
-      <section id="features" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-        <h2 className="text-3xl font-bold text-white mb-12 text-center">
-          Built for IT leadership
-        </h2>
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <div className="bg-slate-800/50 rounded-lg p-6 border border-slate-700 hover:border-blue-500/50 transition">
-            <Monitor className="h-8 w-8 text-blue-500 mb-4" />
-            <h3 className="text-lg font-semibold text-white mb-2">
-              Unified Vendor Feed
-            </h3>
-            <p className="text-slate-400 text-sm">
-              Monitor 28+ vendors in one place. Filter by vendor, category, or
-              severity.
-            </p>
-          </div>
+              <form
+                onSubmit={
+                  useMagicLink ? handleMagicLinkSignIn : handlePasswordSignIn
+                }
+                className="space-y-4"
+              >
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-2">
+                    Email or Username
+                  </label>
+                  <input
+                    type="text"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="you@company.com or username"
+                    className="w-full px-3 py-2.5 rounded-lg border border-input bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition"
+                    required
+                  />
+                </div>
 
-          <div className="bg-slate-800/50 rounded-lg p-6 border border-slate-700 hover:border-blue-500/50 transition">
-            <AlertTriangle className="h-8 w-8 text-red-500 mb-4" />
-            <h3 className="text-lg font-semibold text-white mb-2">
-              CVE & Security Alerts
-            </h3>
-            <p className="text-slate-400 text-sm">
-              Get notified of critical vulnerabilities with severity scoring
-              and affected products.
-            </p>
-          </div>
+                {!useMagicLink && (
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-2">
+                      Password
+                    </label>
+                    <input
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="••••••••"
+                      className="w-full px-3 py-2.5 rounded-lg border border-input bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition"
+                      required
+                    />
+                  </div>
+                )}
 
-          <div className="bg-slate-800/50 rounded-lg p-6 border border-slate-700 hover:border-blue-500/50 transition">
-            <Shield className="h-8 w-8 text-green-500 mb-4" />
-            <h3 className="text-lg font-semibold text-white mb-2">
-              Compliance Tracking
-            </h3>
-            <p className="text-slate-400 text-sm">
-              Track CIS, NIST, CMMC, HIPAA, GDPR, ISO 27001. Checklist format,
-              audit-ready.
-            </p>
-          </div>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full px-4 py-2.5 bg-primary hover:opacity-90 disabled:opacity-50 text-primary-foreground rounded-lg font-medium transition disabled:cursor-not-allowed"
+                >
+                  {loading
+                    ? "Signing in..."
+                    : useMagicLink
+                      ? "Send Magic Link"
+                      : "Sign In"}
+                </button>
+              </form>
 
-          <div className="bg-slate-800/50 rounded-lg p-6 border border-slate-700 hover:border-blue-500/50 transition">
-            <Calendar className="h-8 w-8 text-orange-500 mb-4" />
-            <h3 className="text-lg font-semibold text-white mb-2">
-              EOL Management
-            </h3>
-            <p className="text-slate-400 text-sm">
-              Never miss an end-of-life date. Get ahead of support expirations
-              and patch deadlines.
-            </p>
-          </div>
-
-          <div className="bg-slate-800/50 rounded-lg p-6 border border-slate-700 hover:border-blue-500/50 transition">
-            <TrendingUp className="h-8 w-8 text-cyan-500 mb-4" />
-            <h3 className="text-lg font-semibold text-white mb-2">
-              Bookmark & Triage
-            </h3>
-            <p className="text-slate-400 text-sm">
-              Save items for follow-up. Mark as read. Organize by priority for
-              your team.
-            </p>
-          </div>
-
-          <div className="bg-slate-800/50 rounded-lg p-6 border border-slate-700 hover:border-blue-500/50 transition">
-            <Users className="h-8 w-8 text-indigo-500 mb-4" />
-            <h3 className="text-lg font-semibold text-white mb-2">
-              Multi-User Teams
-            </h3>
-            <p className="text-slate-400 text-sm">
-              Invite your team, share vendor selections, and stay in sync
-              across your organization.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* Personas Section */}
-      <section id="personas" className="bg-slate-900/50 border-y border-slate-800 py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold text-white mb-12 text-center">
-            Built for IT professionals
-          </h2>
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="bg-slate-800/50 rounded-lg p-6 border border-slate-700">
-              <div className="h-12 w-12 bg-blue-500/20 rounded-lg flex items-center justify-center mb-4">
-                <Shield className="h-6 w-6 text-blue-500" />
+              <div className="relative my-6">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-border"></div>
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="px-2 bg-card text-muted-foreground">or</span>
+                </div>
               </div>
-              <h3 className="text-lg font-semibold text-white mb-2">IT Director</h3>
-              <p className="text-slate-400 text-sm">
-                Oversee the entire vendor portfolio, track compliance, and keep
-                executive stakeholders informed.
-              </p>
-            </div>
 
-            <div className="bg-slate-800/50 rounded-lg p-6 border border-slate-700">
-              <div className="h-12 w-12 bg-green-500/20 rounded-lg flex items-center justify-center mb-4">
-                <TrendingUp className="h-6 w-6 text-green-500" />
-              </div>
-              <h3 className="text-lg font-semibold text-white mb-2">vCIO</h3>
-              <p className="text-slate-400 text-sm">
-                Advise on vendor selection, risk assessment, and strategic
-                technology planning.
-              </p>
-            </div>
+              <button
+                onClick={() => {
+                  setUseMagicLink(!useMagicLink);
+                  setPassword("");
+                  setError("");
+                }}
+                className="w-full px-4 py-2.5 border border-border hover:bg-muted text-foreground rounded-lg font-medium transition"
+              >
+                {useMagicLink
+                  ? "Use Password Instead"
+                  : "Sign in with Magic Link"}
+              </button>
 
-            <div className="bg-slate-800/50 rounded-lg p-6 border border-slate-700">
-              <div className="h-12 w-12 bg-red-500/20 rounded-lg flex items-center justify-center mb-4">
-                <Lock className="h-6 w-6 text-red-500" />
-              </div>
-              <h3 className="text-lg font-semibold text-white mb-2">vCISO</h3>
-              <p className="text-slate-400 text-sm">
-                Manage security risks, track CVEs, ensure compliance readiness,
-                and respond to incidents.
+              <p className="text-center text-sm text-muted-foreground mt-6">
+                Don&apos;t have an account?{" "}
+                <Link
+                  href="/signup"
+                  className="text-primary hover:opacity-80 transition font-medium"
+                >
+                  Sign up
+                </Link>
               </p>
-            </div>
-          </div>
+            </>
+          )}
         </div>
-      </section>
 
-      {/* Pricing Section */}
-      <section id="pricing" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-        <h2 className="text-3xl font-bold text-white mb-12 text-center">
-          Simple, transparent pricing
-        </h2>
-        <div className="grid md:grid-cols-3 gap-8">
-          {/* Free Tier */}
-          <div className="bg-slate-800/50 rounded-lg border border-slate-700 p-8 flex flex-col">
-            <h3 className="text-xl font-semibold text-white mb-2">Free</h3>
-            <p className="text-slate-400 text-sm mb-6">Perfect for getting started</p>
-            <div className="text-3xl font-bold text-white mb-6">
-              $0<span className="text-lg text-slate-400">/mo</span>
-            </div>
-            <ul className="space-y-3 mb-8 flex-1">
-              {[
-                "1 user",
-                "Up to 5 vendors",
-                "Basic news feed",
-                "Read/bookmark features",
-              ].map((feature, i) => (
-                <li key={i} className="flex items-center gap-3 text-slate-300 text-sm">
-                  <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
-                  {feature}
-                </li>
-              ))}
-            </ul>
-            <Link
-              href="/signup"
-              className="px-4 py-2 border border-slate-600 hover:border-slate-400 text-white rounded-lg font-medium transition text-center"
-            >
-              Get Started
-            </Link>
-          </div>
-
-          {/* Pro Tier */}
-          <div className="bg-blue-500/10 rounded-lg border border-blue-500/50 p-8 flex flex-col ring-1 ring-blue-500/20">
-            <div className="absolute top-4 right-4 bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-full">
-              MOST POPULAR
-            </div>
-            <h3 className="text-xl font-semibold text-white mb-2">Pro</h3>
-            <p className="text-slate-400 text-sm mb-6">For growing teams</p>
-            <div className="text-3xl font-bold text-white mb-6">
-              $199<span className="text-lg text-slate-400">/mo</span>
-            </div>
-            <ul className="space-y-3 mb-8 flex-1">
-              {[
-                "Unlimited users",
-                "All 28+ vendors",
-                "Full CVE coverage",
-                "Compliance checklists (CIS, NIST, CMMC, HIPAA, GDPR, ISO 27001)",
-                "Email alerts",
-                "Advanced filtering & search",
-              ].map((feature, i) => (
-                <li key={i} className="flex items-center gap-3 text-slate-300 text-sm">
-                  <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
-                  {feature}
-                </li>
-              ))}
-            </ul>
-            <Link
-              href="/signup"
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition text-center"
-            >
-              Start Free Trial
-            </Link>
-          </div>
-
-          {/* Enterprise Tier */}
-          <div className="bg-slate-800/50 rounded-lg border border-slate-700 p-8 flex flex-col">
-            <h3 className="text-xl font-semibold text-white mb-2">Enterprise</h3>
-            <p className="text-slate-400 text-sm mb-6">Custom solutions</p>
-            <div className="text-3xl font-bold text-white mb-6">
-              Custom<span className="text-lg text-slate-400">/mo</span>
-            </div>
-            <ul className="space-y-3 mb-8 flex-1">
-              {[
-                "Everything in Pro",
-                "White-label dashboard",
-                "API access",
-                "SSO/SAML",
-                "Dedicated support",
-                "Custom integrations",
-              ].map((feature, i) => (
-                <li key={i} className="flex items-center gap-3 text-slate-300 text-sm">
-                  <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
-                  {feature}
-                </li>
-              ))}
-            </ul>
-            <button className="px-4 py-2 border border-slate-600 hover:border-slate-400 text-white rounded-lg font-medium transition">
-              Contact Sales
-            </button>
-          </div>
-        </div>
-        <p className="text-center text-slate-400 text-sm mt-8">
-          Pricing coming soon — contact us for early access
+        <p className="text-center text-xs text-muted-foreground mt-6">
+          <Link href="/about" className="hover:text-foreground transition">
+            Learn more about RITHand
+          </Link>
         </p>
-      </section>
-
-      {/* Footer */}
-      <footer className="border-t border-slate-800 bg-slate-950/50 py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-2 gap-8 mb-8">
-            <div className="flex items-center gap-2">
-              <Shield className="h-5 w-5 text-blue-500" />
-              <span className="font-bold text-white">RITHand</span>
-            </div>
-            <div className="flex gap-6 md:justify-end">
-              <a href="#" className="text-slate-400 hover:text-white transition text-sm">
-                Privacy Policy
-              </a>
-              <a href="#" className="text-slate-400 hover:text-white transition text-sm">
-                Terms of Service
-              </a>
-              <a href="#" className="text-slate-400 hover:text-white transition text-sm">
-                Contact
-              </a>
-            </div>
-          </div>
-          <div className="border-t border-slate-800 pt-8 text-center text-slate-500 text-sm">
-            © 2026 RITHand. All rights reserved.
-          </div>
-        </div>
-      </footer>
+      </div>
     </div>
   );
 }

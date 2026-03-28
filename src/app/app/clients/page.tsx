@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import Link from "next/link";
 import { FolderOpen, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getMyClients } from "./actions";
+import { usePolling } from "@/hooks/usePolling";
 
 type Client = {
   id: string;
@@ -43,9 +44,7 @@ export default function ClientsPage() {
     setLoading(false);
   }, []);
 
-  useEffect(() => {
-    loadClients();
-  }, [loadClients]);
+  usePolling(loadClients);
 
   return (
     <div className="p-4 md:p-6 max-w-5xl mx-auto">

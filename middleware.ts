@@ -2,7 +2,6 @@ import { type NextRequest, NextResponse } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
 
 export async function middleware(request: NextRequest) {
-  // This middleware refreshes the auth session on every request
   try {
     const { response, user } = await updateSession(request);
 
@@ -11,15 +10,19 @@ export async function middleware(request: NextRequest) {
     // If user is NOT authenticated
     if (!user) {
       // Redirect to login if trying to access protected routes
-      if (pathname.startsWith("/app") || pathname === "/onboarding") {
+      if (
+        pathname.startsWith("/app") ||
+        pathname === "/onboarding" ||
+        pathname === "/pending"
+      ) {
         return NextResponse.redirect(new URL("/login", request.url));
       }
     }
 
     // If user IS authenticated
     if (user) {
-      // Redirect to /app if trying to access auth pages
-      if (pathname === "/login" || pathname === "/signup") {
+      // Redirect to /app if trying to access auth pages or root
+      if (pathname === "/login" || pathname === "/signup" || pathname === "/") {
         return NextResponse.redirect(new URL("/app", request.url));
       }
     }
@@ -35,6 +38,6 @@ export async function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     // Match all routes except static files and Next.js internals
-    "/((?!_next/static|_next/image|favicon.ico|public/).*)",
+    "/((?!_next/static|_next/image|favicon.ico|public/|about).*)",
   ],
 };

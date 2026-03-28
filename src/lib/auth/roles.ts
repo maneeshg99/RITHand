@@ -2,78 +2,191 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 export type OrgRole = "admin" | "member";
 export type ClientRole = "editor" | "viewer";
+export type EffectiveRole = "app_admin" | "org_admin" | "org_user";
+
+// ─── Low-level auth helpers ──────────────────────────────────────────────────
 
 /**
- * Get the current user's organization membership.
- * Returns null if the user is not in any organization.
+ * Get the currently authenticated Supabase user.
+ * Returns null if not logged in.
  */
-export async function getCurrentUserOrgMembership() {
+export async function getAuthenticatedUser() {
   const supabase = await createServerSupabaseClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
+  return user;
+}
 
-  if (!user) return null;
+/**
+ * Check if the current user is an app-level admin.
+ */
+export async function isAppAdmin(): Promise<boolean> {
+  const user = await getAuthenticatedUser();
+  if (!user) return false;
+
+  const supabase = await createServerSupabaseClient();
+  const { data } = await supabase
+    .from("profiles")
+    .select("app_role")
+    .eq("id", user.id)
+    .single();
+
+  return data?.app_role === "app_admin";
+}
+
+/**
+ * Get the current user's organization membership.
+ * Returns null if the user is not in any organization.
+ * Does NOT check authentication — call getAuthenticatedUser() first if needed.
+ */
+export async function getOrgMembership(userId: string) {
+  const supabase = await createServerSupabaseClient();
 
   const { data, error } = await supabase
     .from("organization_members")
     .select("organization_id, role")
-    .eq("user_id", user.id)
+    .eq("user_id", userId)
     .single();
 
   if (error || !data) return null;
 
   return {
-    userId: user.id,
+    userId,
     orgId: data.organization_id as string,
     role: data.role as OrgRole,
   };
 }
 
 /**
- * Check if the current user is an org admin.
+ * Combined helper: get auth user + org membership + app role.
+ * Returns null if not authenticated.
+ * Returns { user, membership: null, appRole } if authenticated but no org.
+ */
+export async function getFullUserContext() {
+  const user = await getAuthenticatedUser();
+  if (!user) return null;
+
+  const supabase = await createServerSupabaseClient();
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("app_role")
+    .eq("id", user.id)
+    .single();
+
+  const membership = await getOrgMembership(user.id);
+  const appRole = profile?.app_role as "app_admin" | null;
+
+  return { user, membership, appRole };
+}
+
+/**
+ * Get the current user's effective role for display purposes.
+ */
+export async function getEffectiveRole(): Promise<EffectiveRole | null> {
+  const ctx = await getFullUserContext();
+  if (!ctx) return null;
+
+  if (ctx.appRole === "app_admin") return "app_admin";
+  if (ctx.membership?.role === "admin") return "org_admin";
+  if (ctx.membership) return "org_user";
+  return null;
+}
+
+// ─── Legacy-compatible wrappers ──────────────────────────────────────────────
+
+/**
+ * Get the current user's organization membership.
+ * Returns null if the user is not authenticated OR not in any org.
+ */
+export async function getCurrentUserOrgMembership() {
+  const user = await getAuthenticatedUser();
+  if (!user) return null;
+  return getOrgMembership(user.id);
+}
+
+/**
+ * Check if the current user is an org admin (or app admin).
  */
 export async function isCurrentUserOrgAdmin(): Promise<boolean> {
-  const membership = await getCurrentUserOrgMembership();
-  return membership?.role === "admin";
+  const ctx = await getFullUserContext();
+  if (!ctx) return false;
+  if (ctx.appRole === "app_admin") return true;
+  return ctx.membership?.role === "admin";
+}
+
+/**
+ * Check if the current user is any kind of admin (app or org).
+ */
+export async function isAnyAdmin(): Promise<boolean> {
+  return isCurrentUserOrgAdmin();
+}
+
+// ─── Authorization guards ────────────────────────────────────────────────────
+
+/**
+ * Require the current user to be authenticated.
+ * Throws if not logged in.
+ */
+export async function requireAuth() {
+  const user = await getAuthenticatedUser();
+  if (!user) {
+    throw new Error("Not authenticated");
+  }
+  return user;
+}
+
+/**
+ * Require the current user to be an app admin.
+ */
+export async function requireAppAdmin() {
+  const user = await requireAuth();
+  const admin = await isAppAdmin();
+  if (!admin) {
+    throw new Error("Unauthorized: app admin access required");
+  }
+  return user;
+}
+
+/**
+ * Require the current user to be an org admin (or app admin).
+ * Throws an error if not — use in Server Actions/API routes.
+ */
+export async function requireOrgAdmin() {
+  const ctx = await getFullUserContext();
+  if (!ctx) throw new Error("Not authenticated");
+  if (ctx.appRole === "app_admin" && ctx.membership) return ctx.membership;
+  if (!ctx.membership || ctx.membership.role !== "admin") {
+    throw new Error("Unauthorized: admin access required");
+  }
+  return ctx.membership;
 }
 
 /**
  * Get the current user's role on a specific client.
  * Returns null if the user has no access to that client.
- * Org admins always get "admin" back (they can do everything).
+ * Org admins and app admins always get "admin" back.
  */
 export async function getClientRoleForCurrentUser(
   clientId: string
 ): Promise<"admin" | ClientRole | null> {
-  const membership = await getCurrentUserOrgMembership();
-  if (!membership) return null;
+  const ctx = await getFullUserContext();
+  if (!ctx || !ctx.membership) return null;
 
-  // Org admins have full access to all clients
-  if (membership.role === "admin") return "admin";
+  // App admins and org admins have full access
+  if (ctx.appRole === "app_admin" || ctx.membership.role === "admin")
+    return "admin";
 
   const supabase = await createServerSupabaseClient();
   const { data, error } = await supabase
     .from("client_members")
     .select("role")
     .eq("client_id", clientId)
-    .eq("user_id", membership.userId)
+    .eq("user_id", ctx.user.id)
     .single();
 
   if (error || !data) return null;
   return data.role as ClientRole;
-}
-
-/**
- * Require the current user to be an org admin.
- * Throws an error if not — use in Server Actions/API routes.
- */
-export async function requireOrgAdmin() {
-  const membership = await getCurrentUserOrgMembership();
-  if (!membership || membership.role !== "admin") {
-    throw new Error("Unauthorized: admin access required");
-  }
-  return membership;
 }
 
 /**

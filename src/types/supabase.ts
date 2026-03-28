@@ -1,9 +1,13 @@
 // Database schema types for RITHand
 
+export type AppRole = "app_admin" | null;
+
 export type Profile = {
   id: string;
   full_name: string | null;
   avatar_url: string | null;
+  app_role: AppRole;
+  onboarded: boolean;
   created_at: string;
   updated_at: string;
 };

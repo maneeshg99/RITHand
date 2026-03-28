@@ -1,14 +1,31 @@
 "use server";
 
 import { createServerSupabaseClient } from "@/lib/supabase/server";
-import { getCurrentUserOrgMembership } from "@/lib/auth/roles";
+import {
+  getAuthenticatedUser,
+  getOrgMembership,
+  getCurrentUserOrgMembership,
+} from "@/lib/auth/roles";
 import { revalidatePath } from "next/cache";
+
+/** Helper: get membership with distinct error messages */
+async function requireMembership() {
+  const user = await getAuthenticatedUser();
+  if (!user) return { membership: null as never, error: "Not authenticated. Please sign in." };
+  const membership = await getOrgMembership(user.id);
+  if (!membership)
+    return {
+      membership: null as never,
+      error: "No organization membership. Contact your admin to be added to an organization.",
+    };
+  return { membership, error: null };
+}
 
 // ─── Client list (respects access model) ──────────────────────────────────────
 
 export async function getMyClients() {
-  const membership = await getCurrentUserOrgMembership();
-  if (!membership) return { data: [], error: "Not authenticated" };
+  const { membership, error: authError } = await requireMembership();
+  if (authError) return { data: [], error: authError };
 
   const supabase = await createServerSupabaseClient();
 
@@ -55,8 +72,8 @@ export async function getClientTasks(clientId: string) {
 }
 
 export async function getAllMyTasks() {
-  const membership = await getCurrentUserOrgMembership();
-  if (!membership) return { data: [], error: "Not authenticated" };
+  const { membership, error: authError } = await requireMembership();
+  if (authError) return { data: [], error: authError };
   const supabase = await createServerSupabaseClient();
 
   const { data, error } = await supabase
@@ -81,8 +98,8 @@ export async function createTask(
     source_id?: string;
   }
 ) {
-  const membership = await getCurrentUserOrgMembership();
-  if (!membership) return { error: "Not authenticated" };
+  const { membership, error: authError } = await requireMembership();
+  if (authError) return { error: authError };
   const supabase = await createServerSupabaseClient();
 
   const { data, error } = await supabase
@@ -164,8 +181,8 @@ export async function createMeeting(
     status?: string;
   }
 ) {
-  const membership = await getCurrentUserOrgMembership();
-  if (!membership) return { error: "Not authenticated" };
+  const { membership, error: authError } = await requireMembership();
+  if (authError) return { error: authError };
   const supabase = await createServerSupabaseClient();
 
   const { data, error } = await supabase
@@ -261,8 +278,8 @@ export async function getClientVulnerabilities(clientId: string) {
 }
 
 export async function getAllMyVulnerabilities() {
-  const membership = await getCurrentUserOrgMembership();
-  if (!membership) return { data: [], error: "Not authenticated" };
+  const { membership, error: authError } = await requireMembership();
+  if (authError) return { data: [], error: authError };
   const supabase = await createServerSupabaseClient();
 
   const { data, error } = await supabase
@@ -288,8 +305,8 @@ export async function createVulnerability(
     assigned_to?: string;
   }
 ) {
-  const membership = await getCurrentUserOrgMembership();
-  if (!membership) return { error: "Not authenticated" };
+  const { membership, error: authError } = await requireMembership();
+  if (authError) return { error: authError };
   const supabase = await createServerSupabaseClient();
 
   const { data, error } = await supabase
@@ -372,8 +389,8 @@ export async function createAssessment(
   frameworkId: string,
   title?: string
 ) {
-  const membership = await getCurrentUserOrgMembership();
-  if (!membership) return { error: "Not authenticated" };
+  const { membership, error: authError } = await requireMembership();
+  if (authError) return { error: authError };
   const supabase = await createServerSupabaseClient();
 
   const { data, error } = await supabase
@@ -454,4 +471,103 @@ export async function completeAssessment(assessmentId: string, overallScore: num
     .eq("id", assessmentId);
   if (error) return { error: error.message };
   return { success: true };
+}
+
+// ─── Upsert helpers for inline-editable tables ───────────────────────────────
+
+export async function upsertTask(taskData: {
+  id: string;
+  client_id: string;
+  title: string;
+  status?: string;
+  assigned_to_name?: string;
+  description?: string;
+}) {
+  const { membership, error: authError } = await requireMembership();
+  if (authError) return { error: authError };
+  const supabase = await createServerSupabaseClient();
+
+  // Map friendly status to DB status
+  const statusMap: Record<string, string> = {
+    Backlog: "backlog",
+    "In Progress": "in_progress",
+    "Waiting on Client": "waiting_on_client",
+    Done: "done",
+    Cancelled: "cancelled",
+  };
+
+  const dbStatus = statusMap[taskData.status || "Backlog"] || "backlog";
+
+  const { data, error } = await supabase
+    .from("tasks")
+    .upsert(
+      {
+        id: taskData.id,
+        client_id: taskData.client_id,
+        org_id: membership.orgId,
+        title: taskData.title,
+        description: taskData.description || null,
+        status: dbStatus,
+        priority: "medium",
+        category: "general",
+        created_by: membership.userId,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "id" }
+    )
+    .select()
+    .single();
+
+  if (error) return { error: error.message };
+  return { data };
+}
+
+export async function upsertVulnerability(vulnData: {
+  id: string;
+  client_id: string;
+  title: string;
+  severity?: string;
+  status?: string;
+  ticket?: string;
+  notes?: string;
+}) {
+  const { membership, error: authError } = await requireMembership();
+  if (authError) return { error: authError };
+  const supabase = await createServerSupabaseClient();
+
+  // Map friendly status/severity to DB values
+  const statusMap: Record<string, string> = {
+    "In Progress": "in_progress",
+    Completed: "mitigated",
+    "Accepted Risk": "accepted_risk",
+    Deferred: "open",
+  };
+  const severityMap: Record<string, string> = {
+    High: "high",
+    Medium: "medium",
+    Low: "low",
+  };
+
+  const { data, error } = await supabase
+    .from("client_vulnerabilities")
+    .upsert(
+      {
+        id: vulnData.id,
+        client_id: vulnData.client_id,
+        org_id: membership.orgId,
+        title: vulnData.title,
+        severity: severityMap[vulnData.severity || "Medium"] || "medium",
+        status: statusMap[vulnData.status || "In Progress"] || "open",
+        ticket: vulnData.ticket || null,
+        remediation_notes: vulnData.notes || null,
+        created_by: membership.userId,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "id" }
+    )
+    .select()
+    .single();
+
+  if (error) return { error: error.message };
+  return { data };
 }
