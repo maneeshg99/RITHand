@@ -1,22 +1,25 @@
 "use server";
 
-import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { createClient } from "@supabase/supabase-js";
 import { getAuthenticatedUser } from "@/lib/auth/roles";
 import { revalidatePath } from "next/cache";
 
 /**
  * Bootstrap the current user as app admin.
- * This is for test environments only — allows the first user
- * to become an app admin when no other admin exists.
+ * Uses the service role key to bypass RLS entirely.
+ * This is for test environments only.
  */
 export async function bootstrapAsAppAdmin() {
   const user = await getAuthenticatedUser();
   if (!user) return { error: "Not authenticated" };
 
-  const supabase = await createServerSupabaseClient();
+  // Use service role client to bypass RLS
+  const adminClient = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
 
-  // Set app_role to app_admin on the user's profile
-  const { error } = await supabase
+  const { error } = await adminClient
     .from("profiles")
     .update({ app_role: "app_admin" })
     .eq("id", user.id);
