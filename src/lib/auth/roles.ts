@@ -1,8 +1,22 @@
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { createClient } from "@supabase/supabase-js";
 
 export type OrgRole = "admin" | "member";
 export type ClientRole = "editor" | "viewer";
 export type EffectiveRole = "app_admin" | "org_admin" | "org_user";
+
+// ─── Service role client (bypasses RLS) ──────────────────────────────────────
+
+/**
+ * Create a Supabase client with the service role key.
+ * Bypasses all RLS policies. Use only for admin operations.
+ */
+function createAdminClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
 
 // ─── Low-level auth helpers ──────────────────────────────────────────────────
 
@@ -20,13 +34,14 @@ export async function getAuthenticatedUser() {
 
 /**
  * Check if the current user is an app-level admin.
+ * Uses service role client to bypass RLS on profiles.
  */
 export async function isAppAdmin(): Promise<boolean> {
   const user = await getAuthenticatedUser();
   if (!user) return false;
 
-  const supabase = await createServerSupabaseClient();
-  const { data } = await supabase
+  const admin = createAdminClient();
+  const { data } = await admin
     .from("profiles")
     .select("app_role")
     .eq("id", user.id)
@@ -62,13 +77,15 @@ export async function getOrgMembership(userId: string) {
  * Combined helper: get auth user + org membership + app role.
  * Returns null if not authenticated.
  * Returns { user, membership: null, appRole } if authenticated but no org.
+ * Uses service role client to read app_role (avoids RLS recursion).
  */
 export async function getFullUserContext() {
   const user = await getAuthenticatedUser();
   if (!user) return null;
 
-  const supabase = await createServerSupabaseClient();
-  const { data: profile } = await supabase
+  // Read app_role with service role client to bypass RLS
+  const admin = createAdminClient();
+  const { data: profile } = await admin
     .from("profiles")
     .select("app_role")
     .eq("id", user.id)
