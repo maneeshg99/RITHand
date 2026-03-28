@@ -25,9 +25,8 @@ export default function PendingPage() {
       setError(result.error);
       setBootstrapping(false);
     } else {
-      // Redirect to the app — they're now an app admin
-      router.push("/app");
-      router.refresh();
+      // Hard redirect to clear cached server state
+      window.location.href = "/app";
     }
   };
 
