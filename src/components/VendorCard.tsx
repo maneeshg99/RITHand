@@ -18,47 +18,70 @@ export function VendorCard({ vendor }: VendorCardProps) {
 
   return (
     <motion.button
-      whileHover={{ scale: 1.02 }}
-      whileTap={{ scale: 0.98 }}
+      whileHover={{ scale: 1.03 }}
+      whileTap={{ scale: 0.97 }}
       onClick={() => toggleVendor(vendor.id)}
       className={cn(
-        "w-full text-left rounded-xl border p-4 transition-all cursor-pointer",
+        "flex flex-col items-center gap-3 rounded-xl border p-5 transition-all cursor-pointer w-full",
         selected
-          ? "border-primary bg-primary/5 shadow-sm"
-          : "border-border bg-card hover:border-muted-foreground/30"
+          ? "border-primary bg-primary/5 shadow-md ring-1 ring-primary/20"
+          : "border-border bg-card hover:border-primary/30 hover:bg-accent/30 hover:shadow-sm"
       )}
     >
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex items-start gap-3 flex-1 min-w-0">
-          {/* Vendor Logo */}
-          <div className="shrink-0 w-9 h-9 rounded-lg bg-muted flex items-center justify-center overflow-hidden">
-            {!imgError ? (
-              <img
-                src={vendor.logoUrl}
-                alt={`${vendor.name} logo`}
-                className="w-7 h-7 object-contain"
-                onError={() => setImgError(true)}
-              />
-            ) : (
-              <Building2 className="h-4 w-4 text-muted-foreground" />
+      {/* Vendor Logo */}
+      <div
+        className={cn(
+          "w-12 h-12 rounded-xl flex items-center justify-center overflow-hidden transition-colors",
+          selected ? "bg-primary/10" : "bg-muted"
+        )}
+      >
+        {!imgError ? (
+          <img
+            src={vendor.logoUrl}
+            alt={`${vendor.name} logo`}
+            className="w-9 h-9 object-contain"
+            onError={() => setImgError(true)}
+          />
+        ) : (
+          <Building2
+            className={cn(
+              "h-5 w-5",
+              selected ? "text-primary" : "text-muted-foreground"
             )}
-          </div>
+          />
+        )}
+      </div>
 
-          <div className="flex-1 min-w-0">
-            <h3 className="text-sm font-semibold text-card-foreground">{vendor.name}</h3>
-            <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{vendor.description}</p>
-          </div>
-        </div>
-        <div
-          className={cn(
-            "shrink-0 w-6 h-6 rounded-full flex items-center justify-center transition-colors",
-            selected
-              ? "bg-primary text-primary-foreground"
-              : "bg-muted text-muted-foreground"
-          )}
-        >
-          {selected ? <Check className="h-3.5 w-3.5" /> : <Plus className="h-3.5 w-3.5" />}
-        </div>
+      {/* Vendor Name */}
+      <span
+        className={cn(
+          "text-sm font-semibold text-center leading-tight",
+          selected ? "text-primary" : "text-card-foreground"
+        )}
+      >
+        {vendor.name}
+      </span>
+
+      {/* Add/Remove Button */}
+      <div
+        className={cn(
+          "flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-colors",
+          selected
+            ? "bg-primary text-primary-foreground"
+            : "bg-muted text-muted-foreground"
+        )}
+      >
+        {selected ? (
+          <>
+            <Check className="h-3 w-3" />
+            Added
+          </>
+        ) : (
+          <>
+            <Plus className="h-3 w-3" />
+            Add
+          </>
+        )}
       </div>
     </motion.button>
   );

@@ -1,14 +1,18 @@
 import { redirect } from "next/navigation";
-import { isCurrentUserOrgAdmin } from "@/lib/auth/roles";
+import { isCurrentUserOrgAdmin, isAppAdmin } from "@/lib/auth/roles";
 
 export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const isAdmin = await isCurrentUserOrgAdmin();
+  const [isOrgAdmin, isAppAdminUser] = await Promise.all([
+    isCurrentUserOrgAdmin(),
+    isAppAdmin(),
+  ]);
 
-  if (!isAdmin) {
+  // Allow access for both app admins and org admins
+  if (!isOrgAdmin && !isAppAdminUser) {
     redirect("/app");
   }
 

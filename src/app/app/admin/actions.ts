@@ -1,10 +1,15 @@
 "use server";
 
 import { createServerSupabaseClient } from "@/lib/supabase/server";
-import { requireOrgAdmin } from "@/lib/auth/roles";
+import {
+  requireOrgAdmin,
+  requireAppAdmin,
+  getFullUserContext,
+  isAppAdmin,
+} from "@/lib/auth/roles";
 import { revalidatePath } from "next/cache";
 
-// ─── Client CRUD ──────────────────────────────────────────────────────────────
+// ─── Client CRUD (org admin) ─────────────────────────────────────────────────
 
 export async function createClient(formData: FormData) {
   const { orgId } = await requireOrgAdmin();
@@ -65,7 +70,7 @@ export async function deleteClient(clientId: string) {
   return { success: true };
 }
 
-// ─── Client Member Management ─────────────────────────────────────────────────
+// ─── Client Member Management ────────────────────────────────────────────────
 
 export async function assignUserToClient(
   clientId: string,
@@ -128,19 +133,26 @@ export async function removeUserFromClient(clientId: string, userId: string) {
   return { success: true };
 }
 
-// ─── Data Fetching ────────────────────────────────────────────────────────────
+// ─── Data Fetching (org-level) ───────────────────────────────────────────────
 
 export async function getClients() {
-  await requireOrgAdmin();
+  const ctx = await getFullUserContext();
+  if (!ctx) return { error: "Not authenticated", data: [] };
+
   const supabase = await createServerSupabaseClient();
 
-  const { data, error } = await supabase
-    .from("clients")
-    .select("*")
-    .order("name");
+  // App admins can optionally see all clients, but scope to their org if they have one
+  if (ctx.membership) {
+    const { data, error } = await supabase
+      .from("clients")
+      .select("*")
+      .eq("org_id", ctx.membership.orgId)
+      .order("name");
+    if (error) return { error: error.message, data: [] };
+    return { data: data || [] };
+  }
 
-  if (error) return { error: error.message, data: [] };
-  return { data: data || [] };
+  return { data: [] };
 }
 
 export async function getClient(clientId: string) {
@@ -179,34 +191,151 @@ export async function getClientMembers(clientId: string) {
 }
 
 export async function getOrgMembers() {
-  await requireOrgAdmin();
+  const ctx = await getFullUserContext();
+  if (!ctx) return { error: "Not authenticated", data: [] };
+  if (!ctx.membership && ctx.appRole !== "app_admin")
+    return { error: "No org membership", data: [] };
+
   const supabase = await createServerSupabaseClient();
 
-  // Get the admin's org
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { error: "Not authenticated", data: [] };
+  if (ctx.membership) {
+    const { data, error } = await supabase
+      .from("organization_members")
+      .select(
+        `
+        user_id,
+        role,
+        profiles:user_id (id, full_name, username)
+      `
+      )
+      .eq("organization_id", ctx.membership.orgId);
 
-  const { data: membership } = await supabase
-    .from("organization_members")
-    .select("organization_id")
-    .eq("user_id", user.id)
-    .single();
+    if (error) return { error: error.message, data: [] };
+    return { data: data || [] };
+  }
 
-  if (!membership) return { error: "No org found", data: [] };
+  return { data: [] };
+}
+
+// ─── App Admin: Organization Management ──────────────────────────────────────
+
+export async function getAllOrganizations() {
+  await requireAppAdmin();
+  const supabase = await createServerSupabaseClient();
 
   const { data, error } = await supabase
-    .from("organization_members")
-    .select(
-      `
-      user_id,
-      role,
-      profiles:user_id (id, full_name, username)
-    `
-    )
-    .eq("organization_id", membership.organization_id);
+    .from("organizations")
+    .select("*, organization_members(count)")
+    .order("name");
 
   if (error) return { error: error.message, data: [] };
   return { data: data || [] };
+}
+
+export async function createOrganizationAsAdmin(name: string) {
+  const user = await requireAppAdmin();
+  const supabase = await createServerSupabaseClient();
+
+  // Try the RPC function first
+  const { data: orgId, error: rpcError } = await supabase.rpc(
+    "admin_create_organization",
+    {
+      org_name: name,
+      admin_user_id: null,
+    }
+  );
+
+  if (rpcError) {
+    // Fallback: direct insert
+    const { data: org, error } = await supabase
+      .from("organizations")
+      .insert({ name })
+      .select()
+      .single();
+    if (error) return { error: error.message };
+    revalidatePath("/app/admin");
+    return { data: org };
+  }
+
+  revalidatePath("/app/admin");
+  return { data: { id: orgId, name } };
+}
+
+export async function deleteOrganization(orgId: string) {
+  await requireAppAdmin();
+  const supabase = await createServerSupabaseClient();
+
+  const { error } = await supabase
+    .from("organizations")
+    .delete()
+    .eq("id", orgId);
+
+  if (error) return { error: error.message };
+
+  revalidatePath("/app/admin");
+  return { success: true };
+}
+
+export async function getAllUsers() {
+  await requireAppAdmin();
+  const supabase = await createServerSupabaseClient();
+
+  const { data, error } = await supabase
+    .from("profiles")
+    .select(
+      "id, full_name, app_role, onboarded, created_at"
+    )
+    .order("created_at", { ascending: false });
+
+  if (error) return { error: error.message, data: [] };
+  return { data: data || [] };
+}
+
+export async function assignUserToOrg(
+  userId: string,
+  orgId: string,
+  role: "admin" | "member"
+) {
+  await requireAppAdmin();
+  const supabase = await createServerSupabaseClient();
+
+  const { error } = await supabase.from("organization_members").upsert(
+    {
+      organization_id: orgId,
+      user_id: userId,
+      role,
+    },
+    { onConflict: "organization_id,user_id" }
+  );
+
+  if (error) return { error: error.message };
+
+  revalidatePath("/app/admin");
+  return { success: true };
+}
+
+export async function removeUserFromOrg(userId: string, orgId: string) {
+  await requireAppAdmin();
+  const supabase = await createServerSupabaseClient();
+
+  const { error } = await supabase
+    .from("organization_members")
+    .delete()
+    .eq("user_id", userId)
+    .eq("organization_id", orgId);
+
+  if (error) return { error: error.message };
+
+  revalidatePath("/app/admin");
+  return { success: true };
+}
+
+export async function getAdminLevel(): Promise<"app_admin" | "org_admin" | null> {
+  const isApp = await isAppAdmin();
+  if (isApp) return "app_admin";
+
+  const ctx = await getFullUserContext();
+  if (ctx?.membership?.role === "admin") return "org_admin";
+
+  return null;
 }
