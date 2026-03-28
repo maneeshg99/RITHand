@@ -1,22 +1,8 @@
-import { createServerSupabaseClient } from "@/lib/supabase/server";
-import { createClient } from "@supabase/supabase-js";
+import { createServerSupabaseClient, createServiceRoleClient } from "@/lib/supabase/server";
 
 export type OrgRole = "admin" | "member";
 export type ClientRole = "editor" | "viewer";
 export type EffectiveRole = "app_admin" | "org_admin" | "org_user";
-
-// ─── Service role client (bypasses RLS) ──────────────────────────────────────
-
-/**
- * Create a Supabase client with the service role key.
- * Bypasses all RLS policies. Use only for admin operations.
- */
-function createAdminClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-}
 
 // ─── Low-level auth helpers ──────────────────────────────────────────────────
 
@@ -40,7 +26,7 @@ export async function isAppAdmin(): Promise<boolean> {
   const user = await getAuthenticatedUser();
   if (!user) return false;
 
-  const admin = createAdminClient();
+  const admin = createServiceRoleClient();
   const { data } = await admin
     .from("profiles")
     .select("app_role")
@@ -84,7 +70,7 @@ export async function getFullUserContext() {
   if (!user) return null;
 
   // Read app_role with service role client to bypass RLS
-  const admin = createAdminClient();
+  const admin = createServiceRoleClient();
   const { data: profile } = await admin
     .from("profiles")
     .select("app_role")
