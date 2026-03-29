@@ -327,14 +327,157 @@ export async function removeUserFromOrg(userId: string, orgId: string) {
 export async function getAdminLevel(): Promise<{
   level: "app_admin" | "org_admin" | null;
   hasOrg: boolean;
+  orgId: string | null;
 }> {
   const ctx = await getFullUserContext();
-  if (!ctx) return { level: null, hasOrg: false };
+  if (!ctx) return { level: null, hasOrg: false, orgId: null };
 
   const hasOrg = !!ctx.membership;
+  const orgId = ctx.membership?.orgId || null;
 
-  if (ctx.appRole === "app_admin") return { level: "app_admin", hasOrg };
-  if (ctx.membership?.role === "admin") return { level: "org_admin", hasOrg };
+  if (ctx.appRole === "app_admin") return { level: "app_admin", hasOrg, orgId };
+  if (ctx.membership?.role === "admin") return { level: "org_admin", hasOrg, orgId };
 
-  return { level: null, hasOrg };
+  return { level: null, hasOrg: false, orgId: null };
+}
+
+// ─── Organization Detail Actions ─────────────────────────────────────────────
+// These accept an explicit orgId so app admins can manage any org.
+
+export async function getOrganization(orgId: string) {
+  const ctx = await getFullUserContext();
+  if (!ctx) return { error: "Not authenticated", data: null };
+
+  // App admins can view any org; org admins can only view their own
+  if (ctx.appRole !== "app_admin" && ctx.membership?.orgId !== orgId) {
+    return { error: "Unauthorized", data: null };
+  }
+
+  const db = createServiceRoleClient();
+  const { data, error } = await db
+    .from("organizations")
+    .select("*")
+    .eq("id", orgId)
+    .single();
+
+  if (error) return { error: error.message, data: null };
+  return { data };
+}
+
+export async function getOrgMembersForOrg(orgId: string) {
+  const ctx = await getFullUserContext();
+  if (!ctx) return { error: "Not authenticated", data: [] };
+  if (ctx.appRole !== "app_admin" && ctx.membership?.orgId !== orgId) {
+    return { error: "Unauthorized", data: [] };
+  }
+
+  const db = createServiceRoleClient();
+  const { data, error } = await db
+    .from("organization_members")
+    .select("user_id, role, profiles:user_id (id, full_name, username)")
+    .eq("organization_id", orgId);
+
+  if (error) return { error: error.message, data: [] };
+  return { data: data || [] };
+}
+
+export async function getClientsForOrg(orgId: string) {
+  const ctx = await getFullUserContext();
+  if (!ctx) return { error: "Not authenticated", data: [] };
+  if (ctx.appRole !== "app_admin" && ctx.membership?.orgId !== orgId) {
+    return { error: "Unauthorized", data: [] };
+  }
+
+  const db = createServiceRoleClient();
+  const { data, error } = await db
+    .from("clients")
+    .select("*")
+    .eq("org_id", orgId)
+    .order("name");
+
+  if (error) return { error: error.message, data: [] };
+  return { data: data || [] };
+}
+
+export async function createClientForOrg(orgId: string, formData: FormData) {
+  const ctx = await getFullUserContext();
+  if (!ctx) return { error: "Not authenticated" };
+  if (ctx.appRole !== "app_admin" && ctx.membership?.orgId !== orgId) {
+    return { error: "Unauthorized" };
+  }
+
+  const db = createServiceRoleClient();
+  const { error } = await db.from("clients").insert({
+    org_id: orgId,
+    name: formData.get("name") as string,
+    industry: (formData.get("industry") as string) || null,
+    primary_contact: (formData.get("primary_contact") as string) || null,
+    contact_email: (formData.get("contact_email") as string) || null,
+    notes: (formData.get("notes") as string) || null,
+    status: (formData.get("status") as string) || "active",
+    created_by: ctx.user.id,
+  });
+
+  if (error) return { error: error.message };
+  revalidatePath(`/app/admin/organizations/${orgId}`);
+  return { success: true };
+}
+
+export async function updateMemberRole(
+  orgId: string,
+  userId: string,
+  role: "admin" | "member"
+) {
+  const ctx = await getFullUserContext();
+  if (!ctx) return { error: "Not authenticated" };
+  if (ctx.appRole !== "app_admin" && ctx.membership?.orgId !== orgId) {
+    return { error: "Unauthorized" };
+  }
+
+  const db = createServiceRoleClient();
+  const { error } = await db
+    .from("organization_members")
+    .update({ role })
+    .eq("organization_id", orgId)
+    .eq("user_id", userId);
+
+  if (error) return { error: error.message };
+  revalidatePath(`/app/admin/organizations/${orgId}`);
+  return { success: true };
+}
+
+export async function removeMemberFromOrg(orgId: string, userId: string) {
+  const ctx = await getFullUserContext();
+  if (!ctx) return { error: "Not authenticated" };
+  if (ctx.appRole !== "app_admin" && ctx.membership?.orgId !== orgId) {
+    return { error: "Unauthorized" };
+  }
+
+  const db = createServiceRoleClient();
+  const { error } = await db
+    .from("organization_members")
+    .delete()
+    .eq("organization_id", orgId)
+    .eq("user_id", userId);
+
+  if (error) return { error: error.message };
+  revalidatePath(`/app/admin/organizations/${orgId}`);
+  return { success: true };
+}
+
+export async function getClientMembersForOrg(orgId: string, clientId: string) {
+  const ctx = await getFullUserContext();
+  if (!ctx) return { error: "Not authenticated", data: [] };
+  if (ctx.appRole !== "app_admin" && ctx.membership?.orgId !== orgId) {
+    return { error: "Unauthorized", data: [] };
+  }
+
+  const db = createServiceRoleClient();
+  const { data, error } = await db
+    .from("client_members")
+    .select("client_id, user_id, role, profiles:user_id (id, full_name, username)")
+    .eq("client_id", clientId);
+
+  if (error) return { error: error.message, data: [] };
+  return { data: data || [] };
 }
