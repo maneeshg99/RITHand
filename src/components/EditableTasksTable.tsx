@@ -73,10 +73,10 @@ function StatusSelect({
         // Auto-save on selection change
         setTimeout(onBlur, 0);
       }}
-      className="w-full bg-transparent border-0 focus:outline-none focus:ring-1 focus:ring-ring rounded px-1 py-1.5 text-sm text-foreground cursor-pointer"
+      className="w-full bg-card border border-border focus:outline-none focus:ring-1 focus:ring-ring rounded px-2 py-1.5 text-sm text-foreground cursor-pointer"
     >
       {STATUS_OPTIONS.map((opt) => (
-        <option key={opt} value={opt}>
+        <option key={opt} value={opt} className="bg-card text-foreground">
           {opt}
         </option>
       ))}

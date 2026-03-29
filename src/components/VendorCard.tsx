@@ -31,7 +31,7 @@ export function VendorCard({ vendor }: VendorCardProps) {
       {/* Vendor Logo */}
       <div
         className={cn(
-          "w-12 h-12 rounded-xl flex items-center justify-center overflow-hidden transition-colors",
+          "w-14 h-14 rounded-xl flex items-center justify-center overflow-hidden transition-colors",
           selected ? "bg-primary/10" : "bg-muted"
         )}
       >
@@ -39,13 +39,13 @@ export function VendorCard({ vendor }: VendorCardProps) {
           <img
             src={vendor.logoUrl}
             alt={`${vendor.name} logo`}
-            className="w-9 h-9 object-contain"
+            className="w-10 h-10 object-contain"
             onError={() => setImgError(true)}
           />
         ) : (
           <Building2
             className={cn(
-              "h-5 w-5",
+              "h-6 w-6",
               selected ? "text-primary" : "text-muted-foreground"
             )}
           />

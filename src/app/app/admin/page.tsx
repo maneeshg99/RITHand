@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Shield,
   Users,
@@ -11,12 +12,10 @@ import {
   X,
   Globe,
   Trash2,
+  FolderOpen,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
-  getClients,
-  getOrgMembers,
-  createClient,
   getAdminLevel,
   getAllOrganizations,
   createOrganizationAsAdmin,
@@ -24,26 +23,6 @@ import {
   getAllUsers,
   assignUserToOrg,
 } from "./actions";
-
-type Client = {
-  id: string;
-  name: string;
-  industry: string | null;
-  status: string;
-  primary_contact: string | null;
-  contact_email: string | null;
-  created_at: string;
-};
-
-type OrgMember = {
-  user_id: string;
-  role: string;
-  profiles: {
-    id: string;
-    full_name: string | null;
-    username: string | null;
-  } | null;
-};
 
 type Organization = {
   id: string;
@@ -60,26 +39,16 @@ type AppUser = {
   created_at: string;
 };
 
-const statusColors: Record<string, string> = {
-  active: "bg-green-100 text-green-700",
-  onboarding: "bg-blue-100 text-blue-700",
-  offboarding: "bg-yellow-100 text-yellow-700",
-  inactive: "bg-slate-100 text-slate-500",
-};
-
-type TabType = "organizations" | "all-users" | "clients" | "users";
+type TabType = "organizations" | "all-users";
 
 export default function AdminPage() {
+  const router = useRouter();
   const [adminLevel, setAdminLevel] = useState<
     "app_admin" | "org_admin" | null
   >(null);
-  const [hasOrg, setHasOrg] = useState(false);
-  const [tab, setTab] = useState<TabType>("clients");
-  const [clients, setClients] = useState<Client[]>([]);
-  const [members, setMembers] = useState<OrgMember[]>([]);
+  const [tab, setTab] = useState<TabType>("organizations");
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [allUsers, setAllUsers] = useState<AppUser[]>([]);
-  const [showNewClient, setShowNewClient] = useState(false);
   const [showNewOrg, setShowNewOrg] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -87,104 +56,58 @@ export default function AdminPage() {
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const { level, hasOrg: userHasOrg } = await getAdminLevel();
+      const { level, orgId } = await getAdminLevel();
       setAdminLevel(level);
-      setHasOrg(userHasOrg);
+
+      // Org admins go directly to their org detail page
+      if (level === "org_admin" && orgId) {
+        router.replace(`/app/admin/organizations/${orgId}`);
+        return;
+      }
 
       if (level === "app_admin") {
-        setTab("organizations");
-        const promises: Promise<unknown>[] = [
+        const [orgsRes, usersRes] = await Promise.all([
           getAllOrganizations(),
           getAllUsers(),
-        ];
-        // Only fetch org-scoped data if the app admin has an org
-        if (userHasOrg) {
-          promises.push(getClients(), getOrgMembers());
-        }
-        const results = await Promise.all(promises);
-        const orgsRes = results[0] as { data?: Organization[] };
-        const usersRes = results[1] as { data?: AppUser[] };
-        if (orgsRes.data) setOrganizations(orgsRes.data);
-        if (usersRes.data) setAllUsers(usersRes.data);
-        if (userHasOrg) {
-          const clientsRes = results[2] as { data?: Client[] };
-          const membersRes = results[3] as { data?: OrgMember[] };
-          if (clientsRes?.data) setClients(clientsRes.data);
-          if (membersRes?.data) setMembers(membersRes.data);
-        }
-      } else {
-        const [clientsRes, membersRes] = await Promise.all([
-          getClients(),
-          getOrgMembers(),
         ]);
-        if (clientsRes.data) setClients(clientsRes.data as Client[]);
-        if (membersRes.data) setMembers(membersRes.data as OrgMember[]);
+        if (orgsRes.data) setOrganizations(orgsRes.data as Organization[]);
+        if (usersRes.data) setAllUsers(usersRes.data as AppUser[]);
       }
     } catch {
       setError("Failed to load data");
     }
     setLoading(false);
-  }, []);
+  }, [router]);
 
   useEffect(() => {
     loadData();
   }, [loadData]);
 
-  async function handleCreateClient(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setError(null);
-    const formData = new FormData(e.currentTarget);
-    const result = await createClient(formData);
-    if (result.error) {
-      setError(result.error);
-    } else {
-      setShowNewClient(false);
-      loadData();
-    }
+  // Only app admins see this page — org admins are redirected above
+  if (loading) {
+    return (
+      <div className="p-4 md:p-6 max-w-5xl mx-auto">
+        <div className="text-center py-12 text-muted-foreground text-sm">
+          Loading...
+        </div>
+      </div>
+    );
   }
 
-  const tabs: { key: TabType; label: string; icon: typeof Shield; count: number }[] =
-    adminLevel === "app_admin"
-      ? [
-          {
-            key: "organizations",
-            label: "Organizations",
-            icon: Globe,
-            count: organizations.length,
-          },
-          {
-            key: "all-users",
-            label: "All Users",
-            icon: Users,
-            count: allUsers.length,
-          },
-          {
-            key: "clients",
-            label: "Clients",
-            icon: Building2,
-            count: clients.length,
-          },
-          {
-            key: "users",
-            label: "Org Users",
-            icon: Users,
-            count: members.length,
-          },
-        ]
-      : [
-          {
-            key: "clients",
-            label: "Clients",
-            icon: Building2,
-            count: clients.length,
-          },
-          {
-            key: "users",
-            label: "Users",
-            icon: Users,
-            count: members.length,
-          },
-        ];
+  const tabs: { key: TabType; label: string; icon: typeof Shield; count: number }[] = [
+    {
+      key: "organizations",
+      label: "Organizations",
+      icon: Globe,
+      count: organizations.length,
+    },
+    {
+      key: "all-users",
+      label: "All Users",
+      icon: Users,
+      count: allUsers.length,
+    },
+  ];
 
   return (
     <div className="p-4 md:p-6 max-w-5xl mx-auto">
@@ -196,23 +119,12 @@ export default function AdminPage() {
         <div>
           <h1 className="text-2xl font-bold text-foreground">Admin Panel</h1>
           <p className="text-sm text-muted-foreground">
-            {adminLevel === "app_admin"
-              ? "Application administration — manage organizations, users, and clients"
-              : "Manage clients and user access for your organization"}
+            Application administration — manage organizations and users
           </p>
         </div>
-        {adminLevel && (
-          <span
-            className={cn(
-              "ml-auto text-[10px] font-bold uppercase px-2 py-1 rounded",
-              adminLevel === "app_admin"
-                ? "bg-red-100 text-red-700"
-                : "bg-purple-100 text-purple-700"
-            )}
-          >
-            {adminLevel === "app_admin" ? "App Admin" : "Org Admin"}
-          </span>
-        )}
+        <span className="ml-auto text-[10px] font-bold uppercase px-2 py-1 rounded bg-red-100 text-red-700">
+          App Admin
+        </span>
       </div>
 
       {error && (
@@ -225,7 +137,7 @@ export default function AdminPage() {
       )}
 
       {/* Tabs */}
-      <div className="flex gap-1 mb-6 border-b border-border overflow-x-auto">
+      <div className="flex gap-1 mb-6 border-b border-border">
         {tabs.map((t) => (
           <button
             key={t.key}
@@ -243,11 +155,7 @@ export default function AdminPage() {
         ))}
       </div>
 
-      {loading ? (
-        <div className="text-center py-12 text-muted-foreground text-sm">
-          Loading...
-        </div>
-      ) : tab === "organizations" && adminLevel === "app_admin" ? (
+      {tab === "organizations" ? (
         <OrganizationsTab
           organizations={organizations}
           showNewOrg={showNewOrg}
@@ -255,36 +163,19 @@ export default function AdminPage() {
           onReload={loadData}
           setError={setError}
         />
-      ) : tab === "all-users" && adminLevel === "app_admin" ? (
+      ) : (
         <AllUsersTab
           users={allUsers}
           organizations={organizations}
           onReload={loadData}
           setError={setError}
         />
-      ) : tab === "clients" ? (
-        !hasOrg && adminLevel === "app_admin" ? (
-          <NoOrgMessage />
-        ) : (
-          <ClientsTab
-            clients={clients}
-            showNewClient={showNewClient}
-            setShowNewClient={setShowNewClient}
-            onCreateClient={handleCreateClient}
-          />
-        )
-      ) : (
-        !hasOrg && adminLevel === "app_admin" ? (
-          <NoOrgMessage />
-        ) : (
-          <OrgUsersTab members={members} />
-        )
       )}
     </div>
   );
 }
 
-// ─── Organizations Tab (App Admin only) ──────────────────────────────────────
+// ─── Organizations Tab ───────────────────────────────────────────────────────
 
 function OrganizationsTab({
   organizations,
@@ -314,22 +205,25 @@ function OrganizationsTab({
     }
   }
 
-  async function handleDeleteOrg(orgId: string, orgName: string) {
+  async function handleDeleteOrg(
+    e: React.MouseEvent,
+    orgId: string,
+    orgName: string
+  ) {
+    e.preventDefault();
+    e.stopPropagation();
     if (!confirm(`Delete organization "${orgName}"? This cannot be undone.`))
       return;
     const result = await deleteOrganization(orgId);
-    if (result.error) {
-      setError(result.error);
-    } else {
-      onReload();
-    }
+    if (result.error) setError(result.error);
+    else onReload();
   }
 
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
         <p className="text-sm text-muted-foreground">
-          All organizations in the application
+          Click an organization to manage its users and clients
         </p>
         <button
           onClick={() => setShowNewOrg(!showNewOrg)}
@@ -376,34 +270,38 @@ function OrganizationsTab({
           </p>
         </div>
       ) : (
-        <div className="space-y-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {organizations.map((org) => (
-            <div
+            <Link
               key={org.id}
-              className="flex items-center justify-between p-4 rounded-xl border border-border bg-card"
+              href={`/app/admin/organizations/${org.id}`}
+              className="p-4 rounded-xl border border-border bg-card hover:bg-muted/30 hover:border-primary/30 transition-all group"
             >
-              <div className="min-w-0">
-                <span className="text-sm font-semibold text-foreground">
-                  {org.name}
-                </span>
-                <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-                  <span>
-                    {org.organization_members?.[0]?.count ?? 0} member(s)
-                  </span>
-                  <span>
-                    Created{" "}
-                    {new Date(org.created_at).toLocaleDateString()}
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-2 mb-2">
+                  <Building2 className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-semibold text-foreground">
+                    {org.name}
                   </span>
                 </div>
+                <button
+                  onClick={(e) => handleDeleteOrg(e, org.id, org.name)}
+                  className="p-1.5 rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors opacity-0 group-hover:opacity-100"
+                  title="Delete organization"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
               </div>
-              <button
-                onClick={() => handleDeleteOrg(org.id, org.name)}
-                className="p-2 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
-                title="Delete organization"
-              >
-                <Trash2 className="h-4 w-4" />
-              </button>
-            </div>
+              <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                <span className="flex items-center gap-1">
+                  <Users className="h-3 w-3" />
+                  {org.organization_members?.[0]?.count ?? 0} users
+                </span>
+                <span>
+                  Created {new Date(org.created_at).toLocaleDateString()}
+                </span>
+              </div>
+            </Link>
           ))}
         </div>
       )}
@@ -411,7 +309,7 @@ function OrganizationsTab({
   );
 }
 
-// ─── All Users Tab (App Admin only) ──────────────────────────────────────────
+// ─── All Users Tab ───────────────────────────────────────────────────────────
 
 function AllUsersTab({
   users,
@@ -426,17 +324,11 @@ function AllUsersTab({
 }) {
   const [assigningUser, setAssigningUser] = useState<string | null>(null);
   const [selectedOrg, setSelectedOrg] = useState("");
-  const [selectedRole, setSelectedRole] = useState<"admin" | "member">(
-    "member"
-  );
+  const [selectedRole, setSelectedRole] = useState<"admin" | "member">("member");
 
   async function handleAssign() {
     if (!assigningUser || !selectedOrg) return;
-    const result = await assignUserToOrg(
-      assigningUser,
-      selectedOrg,
-      selectedRole
-    );
+    const result = await assignUserToOrg(assigningUser, selectedOrg, selectedRole);
     if (result.error) {
       setError(result.error);
     } else {
@@ -460,10 +352,7 @@ function AllUsersTab({
       ) : (
         <div className="space-y-2">
           {users.map((user) => (
-            <div
-              key={user.id}
-              className="p-4 rounded-xl border border-border bg-card"
-            >
+            <div key={user.id} className="p-4 rounded-xl border border-border bg-card">
               <div className="flex items-center justify-between">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
@@ -475,11 +364,6 @@ function AllUsersTab({
                         App Admin
                       </span>
                     )}
-                    {user.onboarded && (
-                      <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded bg-green-100 text-green-700">
-                        Onboarded
-                      </span>
-                    )}
                   </div>
                   <p className="text-xs text-muted-foreground mt-0.5">
                     Joined {new Date(user.created_at).toLocaleDateString()}
@@ -487,9 +371,7 @@ function AllUsersTab({
                 </div>
                 <button
                   onClick={() =>
-                    setAssigningUser(
-                      assigningUser === user.id ? null : user.id
-                    )
+                    setAssigningUser(assigningUser === user.id ? null : user.id)
                   }
                   className="text-xs font-medium text-primary hover:underline"
                 >
@@ -510,7 +392,7 @@ function AllUsersTab({
                     >
                       <option value="">Select...</option>
                       {organizations.map((org) => (
-                        <option key={org.id} value={org.id}>
+                        <option key={org.id} value={org.id} className="bg-card text-foreground">
                           {org.name}
                         </option>
                       ))}
@@ -527,8 +409,8 @@ function AllUsersTab({
                       }
                       className="px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                     >
-                      <option value="member">Member</option>
-                      <option value="admin">Admin</option>
+                      <option value="member" className="bg-card text-foreground">Member</option>
+                      <option value="admin" className="bg-card text-foreground">Admin</option>
                     </select>
                   </div>
                   <button
@@ -540,255 +422,6 @@ function AllUsersTab({
                   </button>
                 </div>
               )}
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ─── No Org Message (for app admins without org membership) ──────────────────
-
-function NoOrgMessage() {
-  return (
-    <div className="text-center py-12">
-      <Globe className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-      <p className="text-sm font-medium text-foreground mb-1">
-        No organization selected
-      </p>
-      <p className="text-sm text-muted-foreground max-w-sm mx-auto">
-        To manage clients and users, first create an organization in the
-        Organizations tab, then assign yourself to it in the All Users tab.
-      </p>
-    </div>
-  );
-}
-
-// ─── Clients Tab ─────────────────────────────────────────────────────────────
-
-function ClientsTab({
-  clients,
-  showNewClient,
-  setShowNewClient,
-  onCreateClient,
-}: {
-  clients: Client[];
-  showNewClient: boolean;
-  setShowNewClient: (v: boolean) => void;
-  onCreateClient: (e: React.FormEvent<HTMLFormElement>) => void;
-}) {
-  return (
-    <div>
-      <div className="flex items-center justify-between mb-4">
-        <p className="text-sm text-muted-foreground">
-          All client accounts in your organization
-        </p>
-        <button
-          onClick={() => setShowNewClient(!showNewClient)}
-          className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg bg-primary text-primary-foreground hover:opacity-90 transition-opacity"
-        >
-          <Plus className="h-4 w-4" />
-          New Client
-        </button>
-      </div>
-
-      {showNewClient && (
-        <form
-          onSubmit={onCreateClient}
-          className="mb-6 p-4 rounded-xl border border-border bg-card space-y-4"
-        >
-          <h3 className="text-sm font-semibold text-foreground">
-            Create New Client
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-medium text-muted-foreground mb-1">
-                Client Name *
-              </label>
-              <input
-                name="name"
-                required
-                placeholder="Acme Corp"
-                className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-muted-foreground mb-1">
-                Industry
-              </label>
-              <select
-                name="industry"
-                className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-              >
-                <option value="">Select industry...</option>
-                <option value="healthcare">Healthcare</option>
-                <option value="finance">Finance</option>
-                <option value="manufacturing">Manufacturing</option>
-                <option value="education">Education</option>
-                <option value="government">Government</option>
-                <option value="retail">Retail</option>
-                <option value="technology">Technology</option>
-                <option value="legal">Legal</option>
-                <option value="nonprofit">Nonprofit</option>
-                <option value="other">Other</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-muted-foreground mb-1">
-                Primary Contact
-              </label>
-              <input
-                name="primary_contact"
-                placeholder="Jane Smith"
-                className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-muted-foreground mb-1">
-                Contact Email
-              </label>
-              <input
-                name="contact_email"
-                type="email"
-                placeholder="jane@acme.com"
-                className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-muted-foreground mb-1">
-                Status
-              </label>
-              <select
-                name="status"
-                defaultValue="active"
-                className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-              >
-                <option value="active">Active</option>
-                <option value="onboarding">Onboarding</option>
-                <option value="offboarding">Offboarding</option>
-                <option value="inactive">Inactive</option>
-              </select>
-            </div>
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-muted-foreground mb-1">
-              Notes
-            </label>
-            <textarea
-              name="notes"
-              rows={2}
-              placeholder="Account notes..."
-              className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
-            />
-          </div>
-          <div className="flex gap-2">
-            <button
-              type="submit"
-              className="px-4 py-2 text-sm font-medium rounded-lg bg-primary text-primary-foreground hover:opacity-90 transition-opacity"
-            >
-              Create Client
-            </button>
-            <button
-              type="button"
-              onClick={() => setShowNewClient(false)}
-              className="px-4 py-2 text-sm font-medium rounded-lg border border-border text-foreground hover:bg-muted transition-colors"
-            >
-              Cancel
-            </button>
-          </div>
-        </form>
-      )}
-
-      {clients.length === 0 ? (
-        <div className="text-center py-12">
-          <Building2 className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-          <p className="text-sm text-muted-foreground">
-            No clients yet. Create your first client to get started.
-          </p>
-        </div>
-      ) : (
-        <div className="space-y-2">
-          {clients.map((client) => (
-            <Link
-              key={client.id}
-              href={`/app/admin/clients/${client.id}`}
-              className="flex items-center justify-between p-4 rounded-xl border border-border bg-card hover:bg-muted/30 transition-colors group"
-            >
-              <div className="min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-semibold text-foreground">
-                    {client.name}
-                  </span>
-                  <span
-                    className={cn(
-                      "text-[10px] font-bold uppercase px-1.5 py-0.5 rounded",
-                      statusColors[client.status] || statusColors.inactive
-                    )}
-                  >
-                    {client.status}
-                  </span>
-                </div>
-                <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-                  {client.industry && (
-                    <span className="capitalize">{client.industry}</span>
-                  )}
-                  {client.primary_contact && (
-                    <span>Contact: {client.primary_contact}</span>
-                  )}
-                </div>
-              </div>
-              <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors shrink-0" />
-            </Link>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ─── Org Users Tab ───────────────────────────────────────────────────────────
-
-function OrgUsersTab({ members }: { members: OrgMember[] }) {
-  return (
-    <div>
-      <p className="text-sm text-muted-foreground mb-4">
-        All users in your organization
-      </p>
-      {members.length === 0 ? (
-        <div className="text-center py-12">
-          <Users className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-          <p className="text-sm text-muted-foreground">No users found.</p>
-        </div>
-      ) : (
-        <div className="space-y-2">
-          {members.map((member) => (
-            <div
-              key={member.user_id}
-              className="flex items-center justify-between p-4 rounded-xl border border-border bg-card"
-            >
-              <div className="min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-semibold text-foreground">
-                    {member.profiles?.full_name || "Unnamed User"}
-                  </span>
-                  <span
-                    className={cn(
-                      "text-[10px] font-bold uppercase px-1.5 py-0.5 rounded",
-                      member.role === "admin"
-                        ? "bg-purple-100 text-purple-700"
-                        : "bg-slate-100 text-slate-600"
-                    )}
-                  >
-                    {member.role}
-                  </span>
-                </div>
-                {member.profiles?.username && (
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    @{member.profiles.username}
-                  </p>
-                )}
-              </div>
             </div>
           ))}
         </div>
