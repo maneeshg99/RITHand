@@ -195,13 +195,17 @@ function OrganizationsTab({
   async function handleCreateOrg(e: React.FormEvent) {
     e.preventDefault();
     if (!newOrgName.trim()) return;
-    const result = await createOrganizationAsAdmin(newOrgName.trim());
-    if (result.error) {
-      setError(result.error);
-    } else {
-      setNewOrgName("");
-      setShowNewOrg(false);
-      onReload();
+    try {
+      const result = await createOrganizationAsAdmin(newOrgName.trim());
+      if (result.error) {
+        setError(result.error);
+      } else {
+        setNewOrgName("");
+        setShowNewOrg(false);
+        onReload();
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to create organization");
     }
   }
 
@@ -214,9 +218,13 @@ function OrganizationsTab({
     e.stopPropagation();
     if (!confirm(`Delete organization "${orgName}"? This cannot be undone.`))
       return;
-    const result = await deleteOrganization(orgId);
-    if (result.error) setError(result.error);
-    else onReload();
+    try {
+      const result = await deleteOrganization(orgId);
+      if (result.error) setError(result.error);
+      else onReload();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to delete organization");
+    }
   }
 
   return (
@@ -328,13 +336,17 @@ function AllUsersTab({
 
   async function handleAssign() {
     if (!assigningUser || !selectedOrg) return;
-    const result = await assignUserToOrg(assigningUser, selectedOrg, selectedRole);
-    if (result.error) {
-      setError(result.error);
-    } else {
-      setAssigningUser(null);
-      setSelectedOrg("");
-      onReload();
+    try {
+      const result = await assignUserToOrg(assigningUser, selectedOrg, selectedRole);
+      if (result.error) {
+        setError(result.error);
+      } else {
+        setAssigningUser(null);
+        setSelectedOrg("");
+        onReload();
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to assign user");
     }
   }
 

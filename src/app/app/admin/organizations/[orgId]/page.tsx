@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -11,8 +11,6 @@ import {
   Plus,
   Trash2,
   X,
-  ChevronDown,
-  ChevronUp,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -57,14 +55,14 @@ const statusColors: Record<string, string> = {
 
 export default function OrgDetailPage() {
   const params = useParams();
-  const router = useRouter();
   const orgId = params.orgId as string;
 
   const [orgName, setOrgName] = useState("");
   const [members, setMembers] = useState<OrgMember[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [allUsers, setAllUsers] = useState<AppUser[]>([]);
-  const [isAppAdmin, setIsAppAdmin] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [isAppAdminUser, setIsAppAdminUser] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showAddUser, setShowAddUser] = useState(false);
@@ -74,6 +72,7 @@ export default function OrgDetailPage() {
 
   const loadData = useCallback(async () => {
     setLoading(true);
+    setError(null);
     try {
       const [orgRes, membersRes, clientsRes, levelRes] = await Promise.all([
         getOrganization(orgId),
@@ -88,14 +87,23 @@ export default function OrgDetailPage() {
         return;
       }
 
+      const isAppAdmin = levelRes.level === "app_admin";
+      const isOrgAdmin = levelRes.level === "org_admin";
+
       setOrgName(orgRes.data?.name || "");
       setMembers((membersRes.data || []) as OrgMember[]);
       setClients((clientsRes.data || []) as Client[]);
-      setIsAppAdmin(levelRes.level === "app_admin");
+      setIsAppAdminUser(isAppAdmin);
+      setIsAdmin(isAppAdmin || isOrgAdmin);
 
-      if (levelRes.level === "app_admin") {
-        const usersRes = await getAllUsers();
-        setAllUsers((usersRes.data || []) as AppUser[]);
+      // Both app admins and org admins can see the user list for adding
+      if (isAppAdmin || isOrgAdmin) {
+        try {
+          const usersRes = await getAllUsers();
+          if (usersRes.data) setAllUsers(usersRes.data as AppUser[]);
+        } catch {
+          // Non-critical — just means the add-user dropdown won't have options
+        }
       }
     } catch {
       setError("Failed to load organization data");
@@ -110,39 +118,55 @@ export default function OrgDetailPage() {
   const handleAddUser = async () => {
     if (!selectedUserId) return;
     setError(null);
-    const result = await assignUserToOrg(selectedUserId, orgId, selectedRole);
-    if (result.error) {
-      setError(result.error);
-    } else {
-      setShowAddUser(false);
-      setSelectedUserId("");
-      loadData();
+    try {
+      const result = await assignUserToOrg(selectedUserId, orgId, selectedRole);
+      if (result.error) {
+        setError(result.error);
+      } else {
+        setShowAddUser(false);
+        setSelectedUserId("");
+        loadData();
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to add user");
     }
   };
 
   const handleRemoveUser = async (userId: string) => {
     if (!confirm("Remove this user from the organization?")) return;
-    const result = await removeMemberFromOrg(orgId, userId);
-    if (result.error) setError(result.error);
-    else loadData();
+    try {
+      const result = await removeMemberFromOrg(orgId, userId);
+      if (result.error) setError(result.error);
+      else loadData();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to remove user");
+    }
   };
 
   const handleRoleChange = async (userId: string, newRole: "admin" | "member") => {
-    const result = await updateMemberRole(orgId, userId, newRole);
-    if (result.error) setError(result.error);
-    else loadData();
+    try {
+      const result = await updateMemberRole(orgId, userId, newRole);
+      if (result.error) setError(result.error);
+      else loadData();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to update role");
+    }
   };
 
   const handleCreateClient = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
-    const formData = new FormData(e.currentTarget);
-    const result = await createClientForOrg(orgId, formData);
-    if (result.error) {
-      setError(result.error);
-    } else {
-      setShowNewClient(false);
-      loadData();
+    try {
+      const formData = new FormData(e.currentTarget);
+      const result = await createClientForOrg(orgId, formData);
+      if (result.error) {
+        setError(result.error);
+      } else {
+        setShowNewClient(false);
+        loadData();
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to create client");
     }
   };
 
@@ -163,12 +187,14 @@ export default function OrgDetailPage() {
     <div className="p-4 md:p-6 max-w-5xl mx-auto">
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
-        <Link
-          href="/app/admin"
-          className="p-2 rounded-lg hover:bg-muted transition-colors"
-        >
-          <ArrowLeft className="h-4 w-4 text-muted-foreground" />
-        </Link>
+        {isAppAdminUser && (
+          <Link
+            href="/app/admin"
+            className="p-2 rounded-lg hover:bg-muted transition-colors"
+          >
+            <ArrowLeft className="h-4 w-4 text-muted-foreground" />
+          </Link>
+        )}
         <div className="p-2 rounded-lg bg-primary/10">
           <Building2 className="h-5 w-5 text-primary" />
         </div>
@@ -200,7 +226,7 @@ export default function OrgDetailPage() {
                 Users ({members.length})
               </h2>
             </div>
-            {isAppAdmin && (
+            {isAdmin && (
               <button
                 onClick={() => setShowAddUser(!showAddUser)}
                 className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-primary text-primary-foreground hover:opacity-90 transition-opacity"
@@ -279,24 +305,37 @@ export default function OrgDetailPage() {
                       <span className="text-sm font-medium text-foreground">
                         {member.profiles?.full_name || "Unnamed"}
                       </span>
-                      <select
-                        value={member.role}
-                        onChange={(e) =>
-                          handleRoleChange(
-                            member.user_id,
-                            e.target.value as "admin" | "member"
-                          )
-                        }
-                        className={cn(
-                          "text-[10px] font-bold uppercase px-1.5 py-0.5 rounded border-0 cursor-pointer",
-                          member.role === "admin"
-                            ? "bg-purple-100 text-purple-700"
-                            : "bg-slate-100 text-slate-600"
-                        )}
-                      >
-                        <option value="admin" className="bg-card text-foreground">Admin</option>
-                        <option value="member" className="bg-card text-foreground">Member</option>
-                      </select>
+                      {isAdmin ? (
+                        <select
+                          value={member.role}
+                          onChange={(e) =>
+                            handleRoleChange(
+                              member.user_id,
+                              e.target.value as "admin" | "member"
+                            )
+                          }
+                          className={cn(
+                            "text-[10px] font-bold uppercase px-1.5 py-0.5 rounded cursor-pointer border border-transparent hover:border-border",
+                            member.role === "admin"
+                              ? "bg-purple-100 text-purple-700"
+                              : "bg-slate-100 text-slate-600"
+                          )}
+                        >
+                          <option value="admin" className="bg-card text-foreground">Admin</option>
+                          <option value="member" className="bg-card text-foreground">Member</option>
+                        </select>
+                      ) : (
+                        <span
+                          className={cn(
+                            "text-[10px] font-bold uppercase px-1.5 py-0.5 rounded",
+                            member.role === "admin"
+                              ? "bg-purple-100 text-purple-700"
+                              : "bg-slate-100 text-slate-600"
+                          )}
+                        >
+                          {member.role}
+                        </span>
+                      )}
                     </div>
                     {member.profiles?.username && (
                       <p className="text-xs text-muted-foreground">
@@ -304,13 +343,15 @@ export default function OrgDetailPage() {
                       </p>
                     )}
                   </div>
-                  <button
-                    onClick={() => handleRemoveUser(member.user_id)}
-                    className="p-1.5 rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
-                    title="Remove from organization"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
+                  {isAdmin && (
+                    <button
+                      onClick={() => handleRemoveUser(member.user_id)}
+                      className="p-1.5 rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                      title="Remove from organization"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  )}
                 </div>
               ))
             )}
@@ -326,13 +367,15 @@ export default function OrgDetailPage() {
                 Clients ({clients.length})
               </h2>
             </div>
-            <button
-              onClick={() => setShowNewClient(!showNewClient)}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-primary text-primary-foreground hover:opacity-90 transition-opacity"
-            >
-              <Plus className="h-3.5 w-3.5" />
-              New Client
-            </button>
+            {isAdmin && (
+              <button
+                onClick={() => setShowNewClient(!showNewClient)}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-primary text-primary-foreground hover:opacity-90 transition-opacity"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                New Client
+              </button>
+            )}
           </div>
 
           {/* New client form */}
@@ -376,11 +419,22 @@ export default function OrgDetailPage() {
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-muted-foreground mb-1">
-                    Contact
+                    Primary Contact
                   </label>
                   <input
                     name="primary_contact"
                     placeholder="Jane Smith"
+                    className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-muted-foreground mb-1">
+                    Contact Email
+                  </label>
+                  <input
+                    name="contact_email"
+                    type="email"
+                    placeholder="contact@company.com"
                     className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                   />
                 </div>
@@ -399,6 +453,17 @@ export default function OrgDetailPage() {
                     <option value="inactive">Inactive</option>
                   </select>
                 </div>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-muted-foreground mb-1">
+                  Notes
+                </label>
+                <textarea
+                  name="notes"
+                  rows={2}
+                  placeholder="Account notes..."
+                  className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+                />
               </div>
               <div className="flex gap-2">
                 <button

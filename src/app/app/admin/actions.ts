@@ -273,7 +273,13 @@ export async function deleteOrganization(orgId: string) {
 }
 
 export async function getAllUsers() {
-  await requireAppAdmin();
+  // Allow app admins and org admins to see the user list
+  const ctx = await getFullUserContext();
+  if (!ctx) return { error: "Not authenticated", data: [] };
+  if (ctx.appRole !== "app_admin" && ctx.membership?.role !== "admin") {
+    return { error: "Unauthorized", data: [] };
+  }
+
   const db = createServiceRoleClient();
 
   const { data, error } = await db
@@ -290,7 +296,16 @@ export async function assignUserToOrg(
   orgId: string,
   role: "admin" | "member"
 ) {
-  await requireAppAdmin();
+  // Allow app admins, or org admins assigning to their own org
+  const ctx = await getFullUserContext();
+  if (!ctx) return { error: "Not authenticated" };
+  if (ctx.appRole !== "app_admin" && ctx.membership?.orgId !== orgId) {
+    return { error: "Unauthorized: you can only add users to your own organization" };
+  }
+  if (ctx.appRole !== "app_admin" && ctx.membership?.role !== "admin") {
+    return { error: "Unauthorized: admin access required" };
+  }
+
   const db = createServiceRoleClient();
 
   const { error } = await db.from("organization_members").upsert(
@@ -309,7 +324,15 @@ export async function assignUserToOrg(
 }
 
 export async function removeUserFromOrg(userId: string, orgId: string) {
-  await requireAppAdmin();
+  // Allow app admins or org admins removing from their own org
+  const ctx = await getFullUserContext();
+  if (!ctx) return { error: "Not authenticated" };
+  if (ctx.appRole !== "app_admin" && ctx.membership?.orgId !== orgId) {
+    return { error: "Unauthorized" };
+  }
+  if (ctx.appRole !== "app_admin" && ctx.membership?.role !== "admin") {
+    return { error: "Unauthorized: admin access required" };
+  }
   const db = createServiceRoleClient();
 
   const { error } = await db
