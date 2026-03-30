@@ -1,6 +1,6 @@
 "use server";
 
-import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { createServiceRoleClient } from "@/lib/supabase/server";
 import {
   getAuthenticatedUser,
   getOrgMembership,
@@ -27,7 +27,7 @@ export async function getMyClients() {
   const { membership, error: authError } = await requireMembership();
   if (authError) return { data: [], error: authError };
 
-  const supabase = await createServerSupabaseClient();
+  const supabase = createServiceRoleClient();
 
   if (membership.role === "admin") {
     // Admins see all clients in their org
@@ -49,7 +49,7 @@ export async function getMyClients() {
 }
 
 export async function getClientDetail(clientId: string) {
-  const supabase = await createServerSupabaseClient();
+  const supabase = createServiceRoleClient();
   const { data, error } = await supabase
     .from("clients")
     .select("*")
@@ -62,7 +62,7 @@ export async function getClientDetail(clientId: string) {
 // ─── Tasks ────────────────────────────────────────────────────────────────────
 
 export async function getClientTasks(clientId: string) {
-  const supabase = await createServerSupabaseClient();
+  const supabase = createServiceRoleClient();
   const { data, error } = await supabase
     .from("tasks")
     .select("*, profiles:assigned_to(full_name, username)")
@@ -74,7 +74,7 @@ export async function getClientTasks(clientId: string) {
 export async function getAllMyTasks() {
   const { membership, error: authError } = await requireMembership();
   if (authError) return { data: [], error: authError };
-  const supabase = await createServerSupabaseClient();
+  const supabase = createServiceRoleClient();
 
   const { data, error } = await supabase
     .from("tasks")
@@ -100,7 +100,7 @@ export async function createTask(
 ) {
   const { membership, error: authError } = await requireMembership();
   if (authError) return { error: authError };
-  const supabase = await createServerSupabaseClient();
+  const supabase = createServiceRoleClient();
 
   const { data, error } = await supabase
     .from("tasks")
@@ -131,7 +131,7 @@ export async function updateTask(
   taskId: string,
   updates: Record<string, unknown>
 ) {
-  const supabase = await createServerSupabaseClient();
+  const supabase = createServiceRoleClient();
   const { error } = await supabase
     .from("tasks")
     .update({ ...updates, updated_at: new Date().toISOString() })
@@ -142,7 +142,7 @@ export async function updateTask(
 }
 
 export async function deleteTask(taskId: string) {
-  const supabase = await createServerSupabaseClient();
+  const supabase = createServiceRoleClient();
   const { error } = await supabase.from("tasks").delete().eq("id", taskId);
   if (error) return { error: error.message };
   revalidatePath("/app/tasks");
@@ -152,7 +152,7 @@ export async function deleteTask(taskId: string) {
 // ─── Meetings ─────────────────────────────────────────────────────────────────
 
 export async function getClientMeetings(clientId: string) {
-  const supabase = await createServerSupabaseClient();
+  const supabase = createServiceRoleClient();
   const { data, error } = await supabase
     .from("meetings")
     .select("*")
@@ -162,7 +162,7 @@ export async function getClientMeetings(clientId: string) {
 }
 
 export async function getMeeting(meetingId: string) {
-  const supabase = await createServerSupabaseClient();
+  const supabase = createServiceRoleClient();
   const { data, error } = await supabase
     .from("meetings")
     .select("*")
@@ -183,7 +183,7 @@ export async function createMeeting(
 ) {
   const { membership, error: authError } = await requireMembership();
   if (authError) return { error: authError };
-  const supabase = await createServerSupabaseClient();
+  const supabase = createServiceRoleClient();
 
   const { data, error } = await supabase
     .from("meetings")
@@ -208,7 +208,7 @@ export async function updateMeeting(
   meetingId: string,
   updates: Record<string, unknown>
 ) {
-  const supabase = await createServerSupabaseClient();
+  const supabase = createServiceRoleClient();
   const { error } = await supabase
     .from("meetings")
     .update({ ...updates, updated_at: new Date().toISOString() })
@@ -218,7 +218,7 @@ export async function updateMeeting(
 }
 
 export async function getAgendaItems(meetingId: string) {
-  const supabase = await createServerSupabaseClient();
+  const supabase = createServiceRoleClient();
   const { data, error } = await supabase
     .from("meeting_agenda_items")
     .select("*")
@@ -232,7 +232,7 @@ export async function addAgendaItem(
   title: string,
   sortOrder: number
 ) {
-  const supabase = await createServerSupabaseClient();
+  const supabase = createServiceRoleClient();
   const { data, error } = await supabase
     .from("meeting_agenda_items")
     .insert({ meeting_id: meetingId, title, sort_order: sortOrder })
@@ -246,7 +246,7 @@ export async function updateAgendaItem(
   itemId: string,
   updates: Record<string, unknown>
 ) {
-  const supabase = await createServerSupabaseClient();
+  const supabase = createServiceRoleClient();
   const { error } = await supabase
     .from("meeting_agenda_items")
     .update(updates)
@@ -256,7 +256,7 @@ export async function updateAgendaItem(
 }
 
 export async function deleteAgendaItem(itemId: string) {
-  const supabase = await createServerSupabaseClient();
+  const supabase = createServiceRoleClient();
   const { error } = await supabase
     .from("meeting_agenda_items")
     .delete()
@@ -268,7 +268,7 @@ export async function deleteAgendaItem(itemId: string) {
 // ─── Vulnerabilities ──────────────────────────────────────────────────────────
 
 export async function getClientVulnerabilities(clientId: string) {
-  const supabase = await createServerSupabaseClient();
+  const supabase = createServiceRoleClient();
   const { data, error } = await supabase
     .from("client_vulnerabilities")
     .select("*, profiles:assigned_to(full_name, username)")
@@ -280,7 +280,7 @@ export async function getClientVulnerabilities(clientId: string) {
 export async function getAllMyVulnerabilities() {
   const { membership, error: authError } = await requireMembership();
   if (authError) return { data: [], error: authError };
-  const supabase = await createServerSupabaseClient();
+  const supabase = createServiceRoleClient();
 
   const { data, error } = await supabase
     .from("client_vulnerabilities")
@@ -307,7 +307,7 @@ export async function createVulnerability(
 ) {
   const { membership, error: authError } = await requireMembership();
   if (authError) return { error: authError };
-  const supabase = await createServerSupabaseClient();
+  const supabase = createServiceRoleClient();
 
   const { data, error } = await supabase
     .from("client_vulnerabilities")
@@ -340,7 +340,7 @@ export async function updateVulnerability(
   vulnId: string,
   updates: Record<string, unknown>
 ) {
-  const supabase = await createServerSupabaseClient();
+  const supabase = createServiceRoleClient();
   const { error } = await supabase
     .from("client_vulnerabilities")
     .update({ ...updates, updated_at: new Date().toISOString() })
@@ -351,7 +351,7 @@ export async function updateVulnerability(
 }
 
 export async function deleteVulnerability(vulnId: string) {
-  const supabase = await createServerSupabaseClient();
+  const supabase = createServiceRoleClient();
   const { error } = await supabase
     .from("client_vulnerabilities")
     .delete()
@@ -364,7 +364,7 @@ export async function deleteVulnerability(vulnId: string) {
 // ─── Assessments ──────────────────────────────────────────────────────────────
 
 export async function getClientAssessments(clientId: string) {
-  const supabase = await createServerSupabaseClient();
+  const supabase = createServiceRoleClient();
   const { data, error } = await supabase
     .from("assessments")
     .select("*")
@@ -374,7 +374,7 @@ export async function getClientAssessments(clientId: string) {
 }
 
 export async function getAssessment(assessmentId: string) {
-  const supabase = await createServerSupabaseClient();
+  const supabase = createServiceRoleClient();
   const { data, error } = await supabase
     .from("assessments")
     .select("*, clients(name)")
@@ -391,7 +391,7 @@ export async function createAssessment(
 ) {
   const { membership, error: authError } = await requireMembership();
   if (authError) return { error: authError };
-  const supabase = await createServerSupabaseClient();
+  const supabase = createServiceRoleClient();
 
   const { data, error } = await supabase
     .from("assessments")
@@ -413,7 +413,7 @@ export async function createAssessment(
 }
 
 export async function getAssessmentResponses(assessmentId: string) {
-  const supabase = await createServerSupabaseClient();
+  const supabase = createServiceRoleClient();
   const { data, error } = await supabase
     .from("assessment_responses")
     .select("*")
@@ -435,7 +435,7 @@ export async function saveAssessmentResponse(
     notes?: string;
   }
 ) {
-  const supabase = await createServerSupabaseClient();
+  const supabase = createServiceRoleClient();
 
   const { error } = await supabase.from("assessment_responses").upsert(
     {
@@ -459,7 +459,7 @@ export async function saveAssessmentResponse(
 }
 
 export async function completeAssessment(assessmentId: string, overallScore: number) {
-  const supabase = await createServerSupabaseClient();
+  const supabase = createServiceRoleClient();
   const { error } = await supabase
     .from("assessments")
     .update({
@@ -485,7 +485,7 @@ export async function upsertTask(taskData: {
 }) {
   const { membership, error: authError } = await requireMembership();
   if (authError) return { error: authError };
-  const supabase = await createServerSupabaseClient();
+  const supabase = createServiceRoleClient();
 
   // Map friendly status to DB status
   const statusMap: Record<string, string> = {
@@ -533,7 +533,7 @@ export async function upsertVulnerability(vulnData: {
 }) {
   const { membership, error: authError } = await requireMembership();
   if (authError) return { error: authError };
-  const supabase = await createServerSupabaseClient();
+  const supabase = createServiceRoleClient();
 
   // Map friendly status/severity to DB values
   const statusMap: Record<string, string> = {

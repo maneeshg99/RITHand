@@ -1,6 +1,6 @@
 "use server";
 
-import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { createServiceRoleClient } from "@/lib/supabase/server";
 import { getCurrentUserOrgMembership, isCurrentUserOrgAdmin, isAppAdmin } from "@/lib/auth/roles";
 
 export interface DashboardData {
@@ -56,7 +56,7 @@ export async function getDashboardData(): Promise<DashboardData> {
     };
   }
 
-  const supabase = await createServerSupabaseClient();
+  const supabase = createServiceRoleClient();
   const isAdmin = await isCurrentUserOrgAdmin();
 
   // Fetch clients count

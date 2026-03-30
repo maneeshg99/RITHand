@@ -1,6 +1,6 @@
 "use server";
 
-import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { createServerSupabaseClient, createServiceRoleClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { getOrgMembership } from "@/lib/auth/roles";
 
@@ -16,8 +16,10 @@ export async function completeOnboarding(selectedVendorIds: string[]) {
     return { error: "Not authenticated" };
   }
 
+  const db = createServiceRoleClient();
+
   // Mark profile as onboarded
-  await supabase
+  await db
     .from("profiles")
     .update({ onboarded: true })
     .eq("id", user.id);
@@ -36,7 +38,7 @@ export async function completeOnboarding(selectedVendorIds: string[]) {
         vendor_id: vendorId,
       }));
 
-      await supabase
+      await db
         .from("organization_vendors")
         .upsert(vendorInserts, { onConflict: "organization_id,vendor_id" });
     }
