@@ -39,12 +39,12 @@ export async function isAppAdmin(): Promise<boolean> {
 /**
  * Get the current user's organization membership.
  * Returns null if the user is not in any organization.
- * Does NOT check authentication — call getAuthenticatedUser() first if needed.
+ * Uses service role client to bypass RLS (avoids recursion from is_app_admin policies).
  */
 export async function getOrgMembership(userId: string) {
-  const supabase = await createServerSupabaseClient();
+  const admin = createServiceRoleClient();
 
-  const { data, error } = await supabase
+  const { data, error } = await admin
     .from("organization_members")
     .select("organization_id, role")
     .eq("user_id", userId)
@@ -188,8 +188,8 @@ export async function getClientRoleForCurrentUser(
   if (ctx.appRole === "app_admin" || ctx.membership.role === "admin")
     return "admin";
 
-  const supabase = await createServerSupabaseClient();
-  const { data, error } = await supabase
+  const db = createServiceRoleClient();
+  const { data, error } = await db
     .from("client_members")
     .select("role")
     .eq("client_id", clientId)

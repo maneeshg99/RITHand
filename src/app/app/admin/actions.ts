@@ -1,9 +1,6 @@
 "use server";
 
-import {
-  createServerSupabaseClient,
-  createServiceRoleClient,
-} from "@/lib/supabase/server";
+import { createServiceRoleClient } from "@/lib/supabase/server";
 import {
   requireOrgAdmin,
   requireAppAdmin,
@@ -18,7 +15,7 @@ export async function createClient(formData: FormData) {
   const membership = await requireOrgAdmin();
   if (!membership.orgId) return { error: "No organization. Create one first and assign yourself." };
 
-  const supabase = await createServerSupabaseClient();
+  const supabase = createServiceRoleClient();
 
   const { error } = await supabase.from("clients").insert({
     org_id: membership.orgId,
@@ -39,7 +36,7 @@ export async function createClient(formData: FormData) {
 export async function updateClient(clientId: string, formData: FormData) {
   const membership = await requireOrgAdmin();
   if (!membership.orgId) return { error: "No organization. Assign yourself to one first." };
-  const supabase = await createServerSupabaseClient();
+  const supabase = createServiceRoleClient();
 
   const { error } = await supabase
     .from("clients")
@@ -65,7 +62,7 @@ export async function updateClient(clientId: string, formData: FormData) {
 export async function deleteClient(clientId: string) {
   const membership = await requireOrgAdmin();
   if (!membership.orgId) return { error: "No organization. Assign yourself to one first." };
-  const supabase = await createServerSupabaseClient();
+  const supabase = createServiceRoleClient();
 
   const { error } = await supabase
     .from("clients")
@@ -87,7 +84,7 @@ export async function assignUserToClient(
   role: "editor" | "viewer"
 ) {
   const { userId: adminId } = await requireOrgAdmin();
-  const supabase = await createServerSupabaseClient();
+  const supabase = createServiceRoleClient();
 
   const { error } = await supabase.from("client_members").upsert(
     {
@@ -112,7 +109,7 @@ export async function updateClientMemberRole(
   role: "editor" | "viewer"
 ) {
   await requireOrgAdmin();
-  const supabase = await createServerSupabaseClient();
+  const supabase = createServiceRoleClient();
 
   const { error } = await supabase
     .from("client_members")
@@ -128,7 +125,7 @@ export async function updateClientMemberRole(
 
 export async function removeUserFromClient(clientId: string, userId: string) {
   await requireOrgAdmin();
-  const supabase = await createServerSupabaseClient();
+  const supabase = createServiceRoleClient();
 
   const { error } = await supabase
     .from("client_members")
@@ -148,7 +145,7 @@ export async function getClients() {
   const ctx = await getFullUserContext();
   if (!ctx) return { error: "Not authenticated", data: [] };
 
-  const supabase = await createServerSupabaseClient();
+  const supabase = createServiceRoleClient();
 
   if (ctx.membership) {
     const { data, error } = await supabase
@@ -165,7 +162,7 @@ export async function getClients() {
 
 export async function getClient(clientId: string) {
   await requireOrgAdmin();
-  const supabase = await createServerSupabaseClient();
+  const supabase = createServiceRoleClient();
 
   const { data, error } = await supabase
     .from("clients")
@@ -179,7 +176,7 @@ export async function getClient(clientId: string) {
 
 export async function getClientMembers(clientId: string) {
   await requireOrgAdmin();
-  const supabase = await createServerSupabaseClient();
+  const supabase = createServiceRoleClient();
 
   const { data, error } = await supabase
     .from("client_members")
@@ -204,7 +201,7 @@ export async function getOrgMembers() {
   if (!ctx.membership && ctx.appRole !== "app_admin")
     return { error: "No org membership", data: [] };
 
-  const supabase = await createServerSupabaseClient();
+  const supabase = createServiceRoleClient();
 
   if (ctx.membership) {
     const { data, error } = await supabase
