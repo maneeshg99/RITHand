@@ -15,7 +15,7 @@ import { usePolling } from "@/hooks/usePolling";
 
 // Map DB values to display values
 const severityDisplayMap: Record<string, string> = {
-  critical: "High",
+  critical: "Critical",
   high: "High",
   medium: "Medium",
   low: "Low",
@@ -23,7 +23,7 @@ const severityDisplayMap: Record<string, string> = {
 };
 
 const statusDisplayMap: Record<string, string> = {
-  open: "In Progress",
+  open: "Open",
   in_progress: "In Progress",
   mitigated: "Completed",
   accepted_risk: "Accepted Risk",

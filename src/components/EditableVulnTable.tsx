@@ -14,10 +14,11 @@ export type VulnRow = {
   isNew?: boolean;
 };
 
-const SEVERITY_OPTIONS = ["High", "Medium", "Low"];
-const STATUS_OPTIONS = ["In Progress", "Completed", "Accepted Risk", "Deferred"];
+const SEVERITY_OPTIONS = ["Critical", "High", "Medium", "Low"];
+const STATUS_OPTIONS = ["Open", "In Progress", "Completed", "Accepted Risk", "Deferred"];
 
 const severityColors: Record<string, string> = {
+  Critical: "bg-red-200 text-red-900 [data-theme='dark']:bg-red-900/60 [data-theme='dark']:text-red-200",
   High: "bg-red-100 text-red-800 [data-theme='dark']:bg-red-900/40 [data-theme='dark']:text-red-300",
   Medium:
     "bg-orange-100 text-orange-800 [data-theme='dark']:bg-orange-900/40 [data-theme='dark']:text-orange-300",
