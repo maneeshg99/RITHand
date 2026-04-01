@@ -227,13 +227,34 @@ export async function getAllOrganizations() {
   await requireAppAdmin();
   const db = createServiceRoleClient();
 
-  const { data, error } = await db
+  const { data: orgs, error } = await db
     .from("organizations")
-    .select("*, organization_members(count)")
+    .select("id, name, created_at")
     .order("name");
 
   if (error) return { error: error.message, data: [] };
-  return { data: data || [] };
+  if (!orgs || orgs.length === 0) return { data: [] };
+
+  // Get member counts for each org (no FK join)
+  const counts = await Promise.all(
+    orgs.map(async (org) => {
+      const { count } = await db
+        .from("organization_members")
+        .select("id", { count: "exact", head: true })
+        .eq("organization_id", org.id);
+      return { orgId: org.id, count: count || 0 };
+    })
+  );
+
+  const countMap: Record<string, number> = {};
+  for (const c of counts) countMap[c.orgId] = c.count;
+
+  const enriched = orgs.map((org) => ({
+    ...org,
+    organization_members: [{ count: countMap[org.id] || 0 }],
+  }));
+
+  return { data: enriched };
 }
 
 export async function createOrganizationAsAdmin(name: string) {
@@ -303,18 +324,21 @@ export async function assignUserToOrg(
 
   const db = createServiceRoleClient();
 
-  const { error } = await db.from("organization_members").upsert(
+  const { data: inserted, error } = await db.from("organization_members").upsert(
     {
       organization_id: orgId,
       user_id: userId,
       role,
     },
     { onConflict: "organization_id,user_id" }
-  );
+  ).select().single();
 
   if (error) return { error: error.message };
+  if (!inserted) return { error: "Failed to add user to organization — no row returned" };
 
   revalidatePath("/app/admin");
+  revalidatePath("/app", "layout");
+  revalidatePath(`/app/admin/organizations/${orgId}`);
   return { success: true };
 }
 

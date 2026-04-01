@@ -39,10 +39,19 @@ export async function getMyClients() {
       .order("name");
     return { data: data || [], error: error?.message };
   } else {
-    // Members see only assigned clients
+    // Members see only assigned clients — two-step query (no FK join)
+    const { data: assignments } = await supabase
+      .from("client_members")
+      .select("client_id, role")
+      .eq("user_id", membership.userId);
+
+    if (!assignments || assignments.length === 0) return { data: [] };
+
+    const clientIds = assignments.map((a) => a.client_id);
     const { data, error } = await supabase
       .from("clients")
-      .select("*, client_members!inner(role)")
+      .select("*")
+      .in("id", clientIds)
       .eq("org_id", membership.orgId)
       .order("name");
     return { data: data || [], error: error?.message };

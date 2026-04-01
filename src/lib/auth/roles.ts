@@ -48,7 +48,7 @@ export async function getOrgMembership(userId: string) {
     .from("organization_members")
     .select("organization_id, role")
     .eq("user_id", userId)
-    .single();
+    .maybeSingle();
 
   if (error || !data) return null;
 
