@@ -70,9 +70,12 @@ export default function OrgDetailPage() {
   const [selectedUserId, setSelectedUserId] = useState("");
   const [selectedRole, setSelectedRole] = useState<"admin" | "member">("member");
 
+  const [debugInfo, setDebugInfo] = useState<string>("");
+
   const loadData = useCallback(async () => {
     setLoading(true);
     setError(null);
+    const debug: string[] = [`orgId from URL: "${orgId}"`];
     try {
       const [orgRes, membersRes, clientsRes, levelRes] = await Promise.all([
         getOrganization(orgId),
@@ -81,11 +84,22 @@ export default function OrgDetailPage() {
         getAdminLevel(),
       ]);
 
+      debug.push(`getOrganization: ${orgRes.error || orgRes.data?.name || "no data"}`);
+      debug.push(`getOrgMembersForOrg: ${membersRes.error || `${(membersRes.data || []).length} members`}`);
+      debug.push(`getClientsForOrg: ${clientsRes.error || `${(clientsRes.data || []).length} clients`}`);
+      debug.push(`getAdminLevel: level=${levelRes.level}, hasOrg=${levelRes.hasOrg}, orgId=${levelRes.orgId}`);
+
       if (orgRes.error) {
         setError(orgRes.error);
+        setDebugInfo(debug.join("\n"));
         setLoading(false);
         return;
       }
+
+      const errors: string[] = [];
+      if (membersRes.error) errors.push(`Users: ${membersRes.error}`);
+      if (clientsRes.error) errors.push(`Clients: ${clientsRes.error}`);
+      if (errors.length > 0) setError(errors.join(". "));
 
       const isAppAdmin = levelRes.level === "app_admin";
       const isOrgAdmin = levelRes.level === "org_admin";
@@ -100,14 +114,17 @@ export default function OrgDetailPage() {
       if (isAppAdmin || isOrgAdmin) {
         try {
           const usersRes = await getAllUsers();
+          debug.push(`getAllUsers: ${usersRes.error || `${(usersRes.data || []).length} users`}`);
           if (usersRes.data) setAllUsers(usersRes.data as AppUser[]);
-        } catch {
-          // Non-critical — just means the add-user dropdown won't have options
+        } catch (e) {
+          debug.push(`getAllUsers threw: ${e}`);
         }
       }
-    } catch {
+    } catch (e) {
+      debug.push(`CATCH: ${e}`);
       setError("Failed to load organization data");
     }
+    setDebugInfo(debug.join("\n"));
     setLoading(false);
   }, [orgId]);
 
@@ -213,6 +230,14 @@ export default function OrgDetailPage() {
             <X className="h-4 w-4" />
           </button>
         </div>
+      )}
+
+      {/* Debug info — remove after testing */}
+      {debugInfo && (
+        <details className="mb-4 p-3 rounded-lg bg-muted border border-border text-xs font-mono">
+          <summary className="cursor-pointer text-muted-foreground">Debug Info (click to expand)</summary>
+          <pre className="mt-2 whitespace-pre-wrap text-foreground">{debugInfo}</pre>
+        </details>
       )}
 
       {/* Two-column layout */}
