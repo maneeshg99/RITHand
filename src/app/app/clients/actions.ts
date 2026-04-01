@@ -9,17 +9,35 @@ import {
 } from "@/lib/auth/roles";
 import { revalidatePath } from "next/cache";
 
-/** Helper: get membership with distinct error messages */
+/** Helper: get membership with distinct error messages.
+ *  App admins without org membership get all-org access. */
 async function requireMembership() {
   const user = await getAuthenticatedUser();
   if (!user) return { membership: null as never, error: "Not authenticated. Please sign in." };
+
   const membership = await getOrgMembership(user.id);
-  if (!membership)
+  if (membership) return { membership, error: null };
+
+  // Check if app admin — they can access everything even without org membership
+  const admin = createServiceRoleClient();
+  const { data: profile } = await admin
+    .from("profiles")
+    .select("app_role")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (profile?.app_role === "app_admin") {
+    // Return a synthetic membership that gives admin access
     return {
-      membership: null as never,
-      error: "No organization membership. Contact your admin to be added to an organization.",
+      membership: { userId: user.id, orgId: "__all__", role: "admin" as const },
+      error: null,
     };
-  return { membership, error: null };
+  }
+
+  return {
+    membership: null as never,
+    error: "No organization membership. Contact your admin to be added to an organization.",
+  };
 }
 
 // ─── Client list (respects access model) ──────────────────────────────────────
@@ -31,12 +49,12 @@ export async function getMyClients() {
   const supabase = createServiceRoleClient();
 
   if (membership.role === "admin") {
-    // Admins see all clients in their org
-    const { data, error } = await supabase
-      .from("clients")
-      .select("*")
-      .eq("org_id", membership.orgId)
-      .order("name");
+    // Admins see all clients in their org (app admins see all orgs)
+    let query = supabase.from("clients").select("*");
+    if (membership.orgId !== "__all__") {
+      query = query.eq("org_id", membership.orgId);
+    }
+    const { data, error } = await query.order("name");
     return { data: data || [], error: error?.message };
   } else {
     // Members see only assigned clients — two-step query (no FK join)
@@ -94,11 +112,11 @@ export async function getAllMyTasks() {
   if (authError) return { data: [], error: authError };
   const supabase = createServiceRoleClient();
 
-  const { data: tasks, error } = await supabase
-    .from("tasks")
-    .select("*")
-    .eq("org_id", membership.orgId)
-    .order("created_at", { ascending: false });
+  let tasksQuery = supabase.from("tasks").select("*");
+  if (membership.orgId !== "__all__") {
+    tasksQuery = tasksQuery.eq("org_id", membership.orgId);
+  }
+  const { data: tasks, error } = await tasksQuery.order("created_at", { ascending: false });
   if (error || !tasks) return { data: [], error: error?.message };
 
   const assignedIds = tasks.map((t) => t.assigned_to).filter(Boolean) as string[];
@@ -321,11 +339,11 @@ export async function getAllMyVulnerabilities() {
   if (authError) return { data: [], error: authError };
   const supabase = createServiceRoleClient();
 
-  const { data: vulns, error } = await supabase
-    .from("client_vulnerabilities")
-    .select("*")
-    .eq("org_id", membership.orgId)
-    .order("created_at", { ascending: false });
+  let vulnsQuery = supabase.from("client_vulnerabilities").select("*");
+  if (membership.orgId !== "__all__") {
+    vulnsQuery = vulnsQuery.eq("org_id", membership.orgId);
+  }
+  const { data: vulns, error } = await vulnsQuery.order("created_at", { ascending: false });
   if (error || !vulns) return { data: [], error: error?.message };
 
   const assignedIds = vulns.map((v) => v.assigned_to).filter(Boolean) as string[];
