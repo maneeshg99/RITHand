@@ -70,12 +70,9 @@ export default function OrgDetailPage() {
   const [selectedUserId, setSelectedUserId] = useState("");
   const [selectedRole, setSelectedRole] = useState<"admin" | "member">("member");
 
-  const [debugInfo, setDebugInfo] = useState<string>("");
-
   const loadData = useCallback(async () => {
     setLoading(true);
     setError(null);
-    const debug: string[] = [`orgId from URL: "${orgId}"`];
     try {
       const [orgRes, membersRes, clientsRes, levelRes] = await Promise.all([
         getOrganization(orgId),
@@ -84,14 +81,8 @@ export default function OrgDetailPage() {
         getAdminLevel(),
       ]);
 
-      debug.push(`getOrganization: ${JSON.stringify(orgRes)}`);
-      debug.push(`getOrgMembersForOrg: ${JSON.stringify(membersRes)}`);
-      debug.push(`getClientsForOrg: ${JSON.stringify(clientsRes)}`);
-      debug.push(`getAdminLevel: ${JSON.stringify(levelRes)}`);
-
       if (orgRes.error) {
         setError(orgRes.error);
-        setDebugInfo(debug.join("\n"));
         setLoading(false);
         return;
       }
@@ -114,17 +105,14 @@ export default function OrgDetailPage() {
       if (isAppAdmin || isOrgAdmin) {
         try {
           const usersRes = await getAllUsers();
-          debug.push(`getAllUsers: ${usersRes.error || `${(usersRes.data || []).length} users`}`);
           if (usersRes.data) setAllUsers(usersRes.data as AppUser[]);
-        } catch (e) {
-          debug.push(`getAllUsers threw: ${e}`);
+        } catch {
+          // Non-critical
         }
       }
-    } catch (e) {
-      debug.push(`CATCH: ${e}`);
+    } catch {
       setError("Failed to load organization data");
     }
-    setDebugInfo(debug.join("\n"));
     setLoading(false);
   }, [orgId]);
 
@@ -231,12 +219,6 @@ export default function OrgDetailPage() {
           </button>
         </div>
       )}
-
-      {/* Debug info — TEMPORARY — remove after testing */}
-      <div className="mb-4 p-4 rounded-lg bg-yellow-100 border-2 border-yellow-400 text-xs font-mono text-yellow-900">
-        <p className="font-bold mb-2 text-sm">DEBUG OUTPUT (temporary - will be removed)</p>
-        <pre className="whitespace-pre-wrap">{debugInfo || "Loading..."}</pre>
-      </div>
 
       {/* Two-column layout */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

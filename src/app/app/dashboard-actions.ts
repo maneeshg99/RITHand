@@ -1,6 +1,7 @@
 "use server";
 
 import { createServiceRoleClient } from "@/lib/supabase/server";
+import { getClientNamesByIds } from "@/lib/supabase/helpers";
 import { getCurrentUserOrgMembership, isCurrentUserOrgAdmin, isAppAdmin } from "@/lib/auth/roles";
 
 export interface DashboardData {
@@ -82,16 +83,19 @@ export async function getDashboardData(): Promise<DashboardData> {
   // Fetch recent tasks for display (top 5)
   const { data: tasksData } = await supabase
     .from("tasks")
-    .select("id, title, status, priority, client_id, clients(name)")
+    .select("id, title, status, priority, client_id")
     .eq("org_id", membership.orgId)
     .in("status", ["backlog", "in_progress", "review"])
     .order("created_at", { ascending: false })
     .limit(5);
 
+  const taskClientIds = [...new Set((tasksData || []).map((t: any) => t.client_id).filter(Boolean))];
+  const taskClientMap = await getClientNamesByIds(taskClientIds);
+
   const recentTasks = (tasksData || []).map((task: any) => ({
     id: task.id,
     title: task.title,
-    clientName: task.clients?.name || "Unknown",
+    clientName: taskClientMap[task.client_id] || "Unknown",
     status: task.status,
     priority: task.priority,
   }));
@@ -116,17 +120,20 @@ export async function getDashboardData(): Promise<DashboardData> {
   // Fetch top vulnerabilities for display (top 5)
   const { data: vulnsData } = await supabase
     .from("client_vulnerabilities")
-    .select("id, cve_id, title, severity, client_id, clients(name)")
+    .select("id, cve_id, title, severity, client_id")
     .eq("org_id", membership.orgId)
     .in("status", ["open", "in_progress"])
     .order("severity", { ascending: false })
     .limit(5);
 
+  const vulnClientIds = [...new Set((vulnsData || []).map((v: any) => v.client_id).filter(Boolean))];
+  const vulnClientMap = await getClientNamesByIds(vulnClientIds);
+
   const topVulnerabilities = (vulnsData || []).map((vuln: any) => ({
     id: vuln.id,
     cveId: vuln.cve_id,
     title: vuln.title,
-    clientName: vuln.clients?.name || "Unknown",
+    clientName: vulnClientMap[vuln.client_id] || "Unknown",
     severity: vuln.severity,
   }));
 
@@ -141,17 +148,20 @@ export async function getDashboardData(): Promise<DashboardData> {
 
   const { data: meetingsData } = await supabase
     .from("meetings")
-    .select("id, title, scheduled_date, meeting_type, client_id, clients(name)")
+    .select("id, title, scheduled_date, meeting_type, client_id")
     .eq("org_id", membership.orgId)
     .gte("scheduled_date", todayStr)
     .lte("scheduled_date", in7DaysStr)
     .order("scheduled_date", { ascending: true })
     .limit(3);
 
+  const meetingClientIds = [...new Set((meetingsData || []).map((m: any) => m.client_id).filter(Boolean))];
+  const meetingClientMap = await getClientNamesByIds(meetingClientIds);
+
   const nextMeetings = (meetingsData || []).map((meeting: any) => ({
     id: meeting.id,
     title: meeting.title,
-    clientName: meeting.clients?.name || "Unknown",
+    clientName: meetingClientMap[meeting.client_id] || "Unknown",
     scheduledDate: meeting.scheduled_date,
     meetingType: meeting.meeting_type,
   }));
