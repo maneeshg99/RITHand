@@ -1,6 +1,7 @@
 "use server";
 
 import { createServiceRoleClient } from "@/lib/supabase/server";
+import { getProfilesByIds, getClientNamesByIds } from "@/lib/supabase/helpers";
 import {
   getAuthenticatedUser,
   getOrgMembership,
@@ -63,12 +64,20 @@ export async function getClientDetail(clientId: string) {
 
 export async function getClientTasks(clientId: string) {
   const supabase = createServiceRoleClient();
-  const { data, error } = await supabase
+  const { data: tasks, error } = await supabase
     .from("tasks")
-    .select("*, profiles:assigned_to(full_name, username)")
+    .select("*")
     .eq("client_id", clientId)
     .order("created_at", { ascending: false });
-  return { data: data || [], error: error?.message };
+  if (error || !tasks) return { data: [], error: error?.message };
+
+  const assignedIds = tasks.map((t) => t.assigned_to).filter(Boolean) as string[];
+  const profileMap = await getProfilesByIds(assignedIds);
+  const enriched = tasks.map((t) => ({
+    ...t,
+    profiles: t.assigned_to ? profileMap[t.assigned_to] || null : null,
+  }));
+  return { data: enriched };
 }
 
 export async function getAllMyTasks() {
@@ -76,12 +85,25 @@ export async function getAllMyTasks() {
   if (authError) return { data: [], error: authError };
   const supabase = createServiceRoleClient();
 
-  const { data, error } = await supabase
+  const { data: tasks, error } = await supabase
     .from("tasks")
-    .select("*, clients(name), profiles:assigned_to(full_name, username)")
+    .select("*")
     .eq("org_id", membership.orgId)
     .order("created_at", { ascending: false });
-  return { data: data || [], error: error?.message };
+  if (error || !tasks) return { data: [], error: error?.message };
+
+  const assignedIds = tasks.map((t) => t.assigned_to).filter(Boolean) as string[];
+  const clientIds = [...new Set(tasks.map((t) => t.client_id).filter(Boolean))] as string[];
+  const [profileMap, clientMap] = await Promise.all([
+    getProfilesByIds(assignedIds),
+    getClientNamesByIds(clientIds),
+  ]);
+  const enriched = tasks.map((t) => ({
+    ...t,
+    profiles: t.assigned_to ? profileMap[t.assigned_to] || null : null,
+    clients: t.client_id ? { name: clientMap[t.client_id] || "Unknown" } : null,
+  }));
+  return { data: enriched };
 }
 
 export async function createTask(
@@ -269,12 +291,20 @@ export async function deleteAgendaItem(itemId: string) {
 
 export async function getClientVulnerabilities(clientId: string) {
   const supabase = createServiceRoleClient();
-  const { data, error } = await supabase
+  const { data: vulns, error } = await supabase
     .from("client_vulnerabilities")
-    .select("*, profiles:assigned_to(full_name, username)")
+    .select("*")
     .eq("client_id", clientId)
     .order("created_at", { ascending: false });
-  return { data: data || [], error: error?.message };
+  if (error || !vulns) return { data: [], error: error?.message };
+
+  const assignedIds = vulns.map((v) => v.assigned_to).filter(Boolean) as string[];
+  const profileMap = await getProfilesByIds(assignedIds);
+  const enriched = vulns.map((v) => ({
+    ...v,
+    profiles: v.assigned_to ? profileMap[v.assigned_to] || null : null,
+  }));
+  return { data: enriched };
 }
 
 export async function getAllMyVulnerabilities() {
@@ -282,12 +312,25 @@ export async function getAllMyVulnerabilities() {
   if (authError) return { data: [], error: authError };
   const supabase = createServiceRoleClient();
 
-  const { data, error } = await supabase
+  const { data: vulns, error } = await supabase
     .from("client_vulnerabilities")
-    .select("*, clients(name), profiles:assigned_to(full_name, username)")
+    .select("*")
     .eq("org_id", membership.orgId)
     .order("created_at", { ascending: false });
-  return { data: data || [], error: error?.message };
+  if (error || !vulns) return { data: [], error: error?.message };
+
+  const assignedIds = vulns.map((v) => v.assigned_to).filter(Boolean) as string[];
+  const clientIds = [...new Set(vulns.map((v) => v.client_id).filter(Boolean))] as string[];
+  const [profileMap, clientMap] = await Promise.all([
+    getProfilesByIds(assignedIds),
+    getClientNamesByIds(clientIds),
+  ]);
+  const enriched = vulns.map((v) => ({
+    ...v,
+    profiles: v.assigned_to ? profileMap[v.assigned_to] || null : null,
+    clients: v.client_id ? { name: clientMap[v.client_id] || "Unknown" } : null,
+  }));
+  return { data: enriched };
 }
 
 export async function createVulnerability(
@@ -377,11 +420,17 @@ export async function getAssessment(assessmentId: string) {
   const supabase = createServiceRoleClient();
   const { data, error } = await supabase
     .from("assessments")
-    .select("*, clients(name)")
+    .select("*")
     .eq("id", assessmentId)
     .single();
-  if (error) return { data: null, error: error.message };
-  return { data };
+  if (error || !data) return { data: null, error: error?.message };
+
+  // Enrich with client name
+  if (data.client_id) {
+    const clientMap = await getClientNamesByIds([data.client_id]);
+    return { data: { ...data, clients: { name: clientMap[data.client_id] || "Unknown" } } };
+  }
+  return { data: { ...data, clients: null } };
 }
 
 export async function createAssessment(

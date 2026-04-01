@@ -1,6 +1,7 @@
 "use server";
 
 import { createServiceRoleClient } from "@/lib/supabase/server";
+import { getProfilesByIds } from "@/lib/supabase/helpers";
 import {
   requireOrgAdmin,
   requireAppAdmin,
@@ -178,21 +179,20 @@ export async function getClientMembers(clientId: string) {
   await requireOrgAdmin();
   const supabase = createServiceRoleClient();
 
-  const { data, error } = await supabase
+  const { data: members, error } = await supabase
     .from("client_members")
-    .select(
-      `
-      client_id,
-      user_id,
-      role,
-      assigned_at,
-      profiles:user_id (id, full_name, username)
-    `
-    )
+    .select("client_id, user_id, role, assigned_at")
     .eq("client_id", clientId);
 
   if (error) return { error: error.message, data: [] };
-  return { data: data || [] };
+  if (!members || members.length === 0) return { data: [] };
+
+  const profileMap = await getProfilesByIds(members.map((m) => m.user_id));
+  const enriched = members.map((m) => ({
+    ...m,
+    profiles: profileMap[m.user_id] || null,
+  }));
+  return { data: enriched };
 }
 
 export async function getOrgMembers() {
@@ -201,25 +201,23 @@ export async function getOrgMembers() {
   if (!ctx.membership && ctx.appRole !== "app_admin")
     return { error: "No org membership", data: [] };
 
+  if (!ctx.membership) return { data: [] };
+
   const supabase = createServiceRoleClient();
+  const { data: members, error } = await supabase
+    .from("organization_members")
+    .select("user_id, role")
+    .eq("organization_id", ctx.membership.orgId);
 
-  if (ctx.membership) {
-    const { data, error } = await supabase
-      .from("organization_members")
-      .select(
-        `
-        user_id,
-        role,
-        profiles:user_id (id, full_name, username)
-      `
-      )
-      .eq("organization_id", ctx.membership.orgId);
+  if (error) return { error: error.message, data: [] };
+  if (!members || members.length === 0) return { data: [] };
 
-    if (error) return { error: error.message, data: [] };
-    return { data: data || [] };
-  }
-
-  return { data: [] };
+  const profileMap = await getProfilesByIds(members.map((m) => m.user_id));
+  const enriched = members.map((m) => ({
+    ...m,
+    profiles: profileMap[m.user_id] || null,
+  }));
+  return { data: enriched };
 }
 
 // ─── App Admin: Organization Management ──────────────────────────────────────
@@ -392,13 +390,20 @@ export async function getOrgMembersForOrg(orgId: string) {
   }
 
   const db = createServiceRoleClient();
-  const { data, error } = await db
+  const { data: members, error } = await db
     .from("organization_members")
-    .select("user_id, role, profiles:user_id (id, full_name, username)")
+    .select("user_id, role")
     .eq("organization_id", orgId);
 
   if (error) return { error: error.message, data: [] };
-  return { data: data || [] };
+  if (!members || members.length === 0) return { data: [] };
+
+  const profileMap = await getProfilesByIds(members.map((m) => m.user_id));
+  const enriched = members.map((m) => ({
+    ...m,
+    profiles: profileMap[m.user_id] || null,
+  }));
+  return { data: enriched };
 }
 
 export async function getClientsForOrg(orgId: string) {
@@ -493,11 +498,18 @@ export async function getClientMembersForOrg(orgId: string, clientId: string) {
   }
 
   const db = createServiceRoleClient();
-  const { data, error } = await db
+  const { data: members, error } = await db
     .from("client_members")
-    .select("client_id, user_id, role, profiles:user_id (id, full_name, username)")
+    .select("client_id, user_id, role")
     .eq("client_id", clientId);
 
   if (error) return { error: error.message, data: [] };
-  return { data: data || [] };
+  if (!members || members.length === 0) return { data: [] };
+
+  const profileMap = await getProfilesByIds(members.map((m) => m.user_id));
+  const enriched = members.map((m) => ({
+    ...m,
+    profiles: profileMap[m.user_id] || null,
+  }));
+  return { data: enriched };
 }
