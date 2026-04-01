@@ -613,12 +613,14 @@ export async function upsertVulnerability(vulnData: {
 
   // Map friendly status/severity to DB values
   const statusMap: Record<string, string> = {
+    Open: "open",
     "In Progress": "in_progress",
     Completed: "mitigated",
     "Accepted Risk": "accepted_risk",
-    Deferred: "open",
+    Deferred: "false_positive",
   };
   const severityMap: Record<string, string> = {
+    Critical: "critical",
     High: "high",
     Medium: "medium",
     Low: "low",

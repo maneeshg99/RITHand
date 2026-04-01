@@ -48,31 +48,35 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-950 to-slate-900 flex items-center justify-center px-4">
+    <div className="min-h-screen bg-background flex items-center justify-center px-4">
       <div className="w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-2 mb-4">
-            <Shield className="h-8 w-8 text-blue-500" />
-            <span className="text-2xl font-bold text-white">RITHand</span>
+            <Shield className="h-8 w-8 text-primary" />
+            <span className="text-2xl font-bold text-foreground">RITHand</span>
           </div>
-          <p className="text-slate-400">Create your account</p>
+          <p className="text-muted-foreground">Create your account</p>
         </div>
 
         {/* Card */}
-        <div className="bg-slate-800/50 rounded-xl border border-slate-700 p-8">
-          <h1 className="text-xl font-semibold text-white mb-6">Get Started</h1>
+        <div className="rounded-xl border border-border bg-card p-8 shadow-sm">
+          <h1 className="text-xl font-semibold text-foreground mb-6">
+            Get Started
+          </h1>
 
           {error && (
-            <div className="flex items-center gap-3 bg-red-500/10 border border-red-500/30 rounded-lg p-3 mb-6">
+            <div className="flex items-center gap-3 bg-red-50 border border-red-200 rounded-lg p-3 mb-6 [data-theme='dark']:bg-red-900/20 [data-theme='dark']:border-red-800">
               <AlertCircle className="h-4 w-4 text-red-500 flex-shrink-0" />
-              <p className="text-sm text-red-400">{error}</p>
+              <p className="text-sm text-red-600 [data-theme='dark']:text-red-400">
+                {error}
+              </p>
             </div>
           )}
 
           <form onSubmit={handleSignUp} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
+              <label className="block text-sm font-medium text-foreground mb-2">
                 Full Name
               </label>
               <input
@@ -80,13 +84,13 @@ export default function SignupPage() {
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 placeholder="John Doe"
-                className="w-full px-3 py-2 rounded-lg border border-slate-600 bg-slate-900 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                className="w-full px-3 py-2.5 rounded-lg border border-input bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
+              <label className="block text-sm font-medium text-foreground mb-2">
                 Organization / MSP Name
               </label>
               <input
@@ -94,13 +98,13 @@ export default function SignupPage() {
                 value={organizationName}
                 onChange={(e) => setOrganizationName(e.target.value)}
                 placeholder="Acme IT Solutions"
-                className="w-full px-3 py-2 rounded-lg border border-slate-600 bg-slate-900 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                className="w-full px-3 py-2.5 rounded-lg border border-input bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
+              <label className="block text-sm font-medium text-foreground mb-2">
                 Email
               </label>
               <input
@@ -108,13 +112,13 @@ export default function SignupPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@company.com"
-                className="w-full px-3 py-2 rounded-lg border border-slate-600 bg-slate-900 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                className="w-full px-3 py-2.5 rounded-lg border border-input bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
+              <label className="block text-sm font-medium text-foreground mb-2">
                 Password
               </label>
               <input
@@ -122,14 +126,16 @@ export default function SignupPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full px-3 py-2 rounded-lg border border-slate-600 bg-slate-900 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                className="w-full px-3 py-2.5 rounded-lg border border-input bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition"
                 required
               />
-              <p className="text-xs text-slate-500 mt-1">Minimum 8 characters</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Minimum 8 characters
+              </p>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
+              <label className="block text-sm font-medium text-foreground mb-2">
                 Confirm Password
               </label>
               <input
@@ -137,7 +143,7 @@ export default function SignupPage() {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full px-3 py-2 rounded-lg border border-slate-600 bg-slate-900 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                className="w-full px-3 py-2.5 rounded-lg border border-input bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition"
                 required
               />
             </div>
@@ -145,17 +151,17 @@ export default function SignupPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-600/50 text-white rounded-lg font-medium transition disabled:cursor-not-allowed"
+              className="w-full px-4 py-2.5 bg-primary hover:opacity-90 disabled:opacity-50 text-primary-foreground rounded-lg font-medium transition disabled:cursor-not-allowed"
             >
               {loading ? "Creating account..." : "Create Account"}
             </button>
           </form>
 
-          <p className="text-center text-sm text-slate-400 mt-6">
+          <p className="text-center text-sm text-muted-foreground mt-6">
             Already have an account?{" "}
             <Link
               href="/login"
-              className="text-blue-400 hover:text-blue-300 transition font-medium"
+              className="text-primary hover:opacity-80 transition font-medium"
             >
               Sign in
             </Link>
