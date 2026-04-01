@@ -32,7 +32,6 @@ const baseNavItems = [
     label: "Vulnerabilities",
     icon: AlertTriangle,
   },
-  { href: "/app/vendors", label: "Vendors", icon: Building2 },
   { href: "/app/bookmarks", label: "Bookmarks", icon: Bookmark },
   { href: "/app/settings", label: "Settings", icon: Settings },
 ];

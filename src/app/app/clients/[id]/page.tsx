@@ -10,6 +10,7 @@ import {
   Calendar,
   AlertTriangle,
   ClipboardList,
+  Building2,
   Plus,
   X,
   Pencil,
@@ -30,6 +31,8 @@ import {
   updateVulnerability,
   createAssessment,
 } from "../actions";
+import { vendors, vendorCategories } from "@/data/vendors";
+import { VendorCard } from "@/components/VendorCard";
 
 type Client = {
   id: string;
@@ -126,7 +129,7 @@ export default function ClientDetailPage() {
   const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [vulnerabilities, setVulnerabilities] = useState<Vulnerability[]>([]);
   const [assessments, setAssessments] = useState<Assessment[]>([]);
-  const [tab, setTab] = useState<"overview" | "tasks" | "meetings" | "vulnerabilities" | "assessments">("overview");
+  const [tab, setTab] = useState<"overview" | "tasks" | "meetings" | "vulnerabilities" | "assessments" | "vendors">("overview");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showNewTask, setShowNewTask] = useState(false);
@@ -385,6 +388,18 @@ export default function ClientDetailPage() {
           <ClipboardList className="h-4 w-4" />
           Assessments ({assessments.length})
         </button>
+        <button
+          onClick={() => setTab("vendors")}
+          className={cn(
+            "flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors -mb-px whitespace-nowrap",
+            tab === "vendors"
+              ? "border-primary text-primary"
+              : "border-transparent text-muted-foreground hover:text-foreground"
+          )}
+        >
+          <Building2 className="h-4 w-4" />
+          Vendors
+        </button>
       </div>
 
       {/* Tab Content */}
@@ -427,6 +442,35 @@ export default function ClientDetailPage() {
           onRefresh={loadAssessments}
         />
       )}
+      {tab === "vendors" && <VendorsTab />}
+    </div>
+  );
+}
+
+// ─── Vendors Tab ────────────────────────────────────────────────────────────
+
+function VendorsTab() {
+  return (
+    <div>
+      <p className="text-sm text-muted-foreground mb-4">
+        Select the vendors used by this client.
+      </p>
+      <div className="space-y-6">
+        {vendorCategories.map((category) => (
+          <div key={category}>
+            <h3 className="text-sm font-semibold text-foreground mb-3 uppercase tracking-wide">
+              {category}
+            </h3>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+              {vendors
+                .filter((v) => v.category === category)
+                .map((vendor) => (
+                  <VendorCard key={vendor.id} vendor={vendor} />
+                ))}
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

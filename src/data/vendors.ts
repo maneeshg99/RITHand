@@ -24,7 +24,7 @@ export const vendors: Vendor[] = [
     category: "Networking",
     description: "Enterprise networking, switching, routing, and collaboration solutions.",
     website: "https://www.cisco.com",
-    logoUrl: "https://logo.clearbit.com/cisco.com",
+    logoUrl: "https://www.google.com/s2/favicons?domain=cisco.com&sz=128",
   },
   {
     id: "cisco-meraki",
@@ -32,7 +32,7 @@ export const vendors: Vendor[] = [
     category: "Networking",
     description: "Cloud-managed IT solutions including wireless, switching, and security.",
     website: "https://meraki.cisco.com",
-    logoUrl: "https://logo.clearbit.com/meraki.cisco.com",
+    logoUrl: "https://www.google.com/s2/favicons?domain=meraki.cisco.com&sz=128",
   },
   {
     id: "ubiquiti",
@@ -40,7 +40,7 @@ export const vendors: Vendor[] = [
     category: "Networking",
     description: "Networking equipment for enterprise and SMB including UniFi and EdgeMax.",
     website: "https://www.ui.com",
-    logoUrl: "https://logo.clearbit.com/ui.com",
+    logoUrl: "https://www.google.com/s2/favicons?domain=ui.com&sz=128",
   },
   {
     id: "aruba",
@@ -48,7 +48,7 @@ export const vendors: Vendor[] = [
     category: "Networking",
     description: "Wired and wireless LAN, SD-WAN, and network security solutions.",
     website: "https://www.arubanetworks.com",
-    logoUrl: "https://logo.clearbit.com/arubanetworks.com",
+    logoUrl: "https://www.google.com/s2/favicons?domain=arubanetworks.com&sz=128",
   },
   {
     id: "juniper",
@@ -56,7 +56,7 @@ export const vendors: Vendor[] = [
     category: "Networking",
     description: "AI-driven enterprise networking, routing, and security.",
     website: "https://www.juniper.net",
-    logoUrl: "https://logo.clearbit.com/juniper.net",
+    logoUrl: "https://www.google.com/s2/favicons?domain=juniper.net&sz=128",
   },
 
   // Firewalls / Security
@@ -66,7 +66,7 @@ export const vendors: Vendor[] = [
     category: "Firewalls / Security",
     description: "Next-generation firewalls, cloud security, and threat intelligence.",
     website: "https://www.paloaltonetworks.com",
-    logoUrl: "https://logo.clearbit.com/paloaltonetworks.com",
+    logoUrl: "https://www.google.com/s2/favicons?domain=paloaltonetworks.com&sz=128",
   },
   {
     id: "fortinet",
@@ -74,7 +74,7 @@ export const vendors: Vendor[] = [
     category: "Firewalls / Security",
     description: "FortiGate firewalls, SD-WAN, and unified threat management.",
     website: "https://www.fortinet.com",
-    logoUrl: "https://logo.clearbit.com/fortinet.com",
+    logoUrl: "https://www.google.com/s2/favicons?domain=fortinet.com&sz=128",
   },
   {
     id: "sonicwall",
@@ -82,7 +82,7 @@ export const vendors: Vendor[] = [
     category: "Firewalls / Security",
     description: "Firewalls, secure remote access, and email security solutions.",
     website: "https://www.sonicwall.com",
-    logoUrl: "https://logo.clearbit.com/sonicwall.com",
+    logoUrl: "https://www.google.com/s2/favicons?domain=sonicwall.com&sz=128",
   },
   {
     id: "watchguard",
@@ -90,7 +90,7 @@ export const vendors: Vendor[] = [
     category: "Firewalls / Security",
     description: "Network security appliances, Wi-Fi security, and MFA solutions.",
     website: "https://www.watchguard.com",
-    logoUrl: "https://logo.clearbit.com/watchguard.com",
+    logoUrl: "https://www.google.com/s2/favicons?domain=watchguard.com&sz=128",
   },
   {
     id: "sophos",
@@ -98,7 +98,7 @@ export const vendors: Vendor[] = [
     category: "Firewalls / Security",
     description: "Next-gen firewalls, endpoint protection, and managed threat response.",
     website: "https://www.sophos.com",
-    logoUrl: "https://logo.clearbit.com/sophos.com",
+    logoUrl: "https://www.google.com/s2/favicons?domain=sophos.com&sz=128",
   },
 
   // Cloud / Infrastructure
@@ -108,7 +108,7 @@ export const vendors: Vendor[] = [
     category: "Cloud / Infrastructure",
     description: "Azure cloud, Microsoft 365, Windows Server, and enterprise software.",
     website: "https://www.microsoft.com",
-    logoUrl: "https://logo.clearbit.com/microsoft.com",
+    logoUrl: "https://www.google.com/s2/favicons?domain=microsoft.com&sz=128",
   },
   {
     id: "aws",
@@ -116,7 +116,7 @@ export const vendors: Vendor[] = [
     category: "Cloud / Infrastructure",
     description: "Cloud computing platform with compute, storage, database, and AI services.",
     website: "https://aws.amazon.com",
-    logoUrl: "https://logo.clearbit.com/aws.amazon.com",
+    logoUrl: "https://www.google.com/s2/favicons?domain=aws.amazon.com&sz=128",
   },
   {
     id: "gcp",
@@ -124,7 +124,7 @@ export const vendors: Vendor[] = [
     category: "Cloud / Infrastructure",
     description: "Cloud computing, data analytics, and machine learning services.",
     website: "https://cloud.google.com",
-    logoUrl: "https://logo.clearbit.com/cloud.google.com",
+    logoUrl: "https://www.google.com/s2/favicons?domain=cloud.google.com&sz=128",
   },
 
   // Endpoint Security
@@ -134,7 +134,7 @@ export const vendors: Vendor[] = [
     category: "Endpoint Security",
     description: "Cloud-native endpoint protection, threat intelligence, and incident response.",
     website: "https://www.crowdstrike.com",
-    logoUrl: "https://logo.clearbit.com/crowdstrike.com",
+    logoUrl: "https://www.google.com/s2/favicons?domain=crowdstrike.com&sz=128",
   },
   {
     id: "sentinelone",
@@ -142,7 +142,7 @@ export const vendors: Vendor[] = [
     category: "Endpoint Security",
     description: "AI-powered endpoint detection and response (EDR) platform.",
     website: "https://www.sentinelone.com",
-    logoUrl: "https://logo.clearbit.com/sentinelone.com",
+    logoUrl: "https://www.google.com/s2/favicons?domain=sentinelone.com&sz=128",
   },
   {
     id: "carbon-black",
@@ -150,7 +150,7 @@ export const vendors: Vendor[] = [
     category: "Endpoint Security",
     description: "Cloud-native endpoint and workload protection.",
     website: "https://www.carbonblack.com",
-    logoUrl: "https://logo.clearbit.com/carbonblack.com",
+    logoUrl: "https://www.google.com/s2/favicons?domain=carbonblack.com&sz=128",
   },
   {
     id: "microsoft-defender",
@@ -158,7 +158,7 @@ export const vendors: Vendor[] = [
     category: "Endpoint Security",
     description: "Integrated endpoint security, threat detection, and response.",
     website: "https://www.microsoft.com/security/business/endpoint-security",
-    logoUrl: "https://logo.clearbit.com/microsoft.com",
+    logoUrl: "https://www.google.com/s2/favicons?domain=microsoft.com&sz=128",
   },
 
   // RMM / PSA
@@ -168,7 +168,7 @@ export const vendors: Vendor[] = [
     category: "RMM / PSA",
     description: "IT management platform with RMM, PSA, and cybersecurity solutions.",
     website: "https://www.connectwise.com",
-    logoUrl: "https://logo.clearbit.com/connectwise.com",
+    logoUrl: "https://www.google.com/s2/favicons?domain=connectwise.com&sz=128",
   },
   {
     id: "datto",
@@ -176,7 +176,7 @@ export const vendors: Vendor[] = [
     category: "RMM / PSA",
     description: "MSP-focused RMM, backup, disaster recovery, and networking tools.",
     website: "https://www.datto.com",
-    logoUrl: "https://logo.clearbit.com/datto.com",
+    logoUrl: "https://www.google.com/s2/favicons?domain=datto.com&sz=128",
   },
   {
     id: "ninjaone",
@@ -184,7 +184,7 @@ export const vendors: Vendor[] = [
     category: "RMM / PSA",
     description: "Unified IT management with RMM, patch management, and remote access.",
     website: "https://www.ninjaone.com",
-    logoUrl: "https://logo.clearbit.com/ninjaone.com",
+    logoUrl: "https://www.google.com/s2/favicons?domain=ninjaone.com&sz=128",
   },
   {
     id: "n-able",
@@ -192,7 +192,7 @@ export const vendors: Vendor[] = [
     category: "RMM / PSA",
     description: "IT management solutions including N-central and N-sight RMM.",
     website: "https://www.n-able.com",
-    logoUrl: "https://logo.clearbit.com/n-able.com",
+    logoUrl: "https://www.google.com/s2/favicons?domain=n-able.com&sz=128",
   },
 
   // Backup & DR
@@ -202,7 +202,7 @@ export const vendors: Vendor[] = [
     category: "Backup & DR",
     description: "Data backup, disaster recovery, and intelligent data management.",
     website: "https://www.veeam.com",
-    logoUrl: "https://logo.clearbit.com/veeam.com",
+    logoUrl: "https://www.google.com/s2/favicons?domain=veeam.com&sz=128",
   },
   {
     id: "acronis",
@@ -210,7 +210,7 @@ export const vendors: Vendor[] = [
     category: "Backup & DR",
     description: "Cyber protection combining backup, disaster recovery, and security.",
     website: "https://www.acronis.com",
-    logoUrl: "https://logo.clearbit.com/acronis.com",
+    logoUrl: "https://www.google.com/s2/favicons?domain=acronis.com&sz=128",
   },
   {
     id: "druva",
@@ -218,7 +218,7 @@ export const vendors: Vendor[] = [
     category: "Backup & DR",
     description: "SaaS-based data protection and management across endpoints and cloud.",
     website: "https://www.druva.com",
-    logoUrl: "https://logo.clearbit.com/druva.com",
+    logoUrl: "https://www.google.com/s2/favicons?domain=druva.com&sz=128",
   },
 
   // Identity & Access
@@ -228,7 +228,7 @@ export const vendors: Vendor[] = [
     category: "Identity & Access",
     description: "Identity and access management, SSO, and multi-factor authentication.",
     website: "https://www.okta.com",
-    logoUrl: "https://logo.clearbit.com/okta.com",
+    logoUrl: "https://www.google.com/s2/favicons?domain=okta.com&sz=128",
   },
   {
     id: "duo-security",
@@ -236,7 +236,7 @@ export const vendors: Vendor[] = [
     category: "Identity & Access",
     description: "Multi-factor authentication and zero-trust security platform.",
     website: "https://duo.com",
-    logoUrl: "https://logo.clearbit.com/duo.com",
+    logoUrl: "https://www.google.com/s2/favicons?domain=duo.com&sz=128",
   },
   {
     id: "jumpcloud",
@@ -244,7 +244,7 @@ export const vendors: Vendor[] = [
     category: "Identity & Access",
     description: "Open directory platform for identity, access, and device management.",
     website: "https://jumpcloud.com",
-    logoUrl: "https://logo.clearbit.com/jumpcloud.com",
+    logoUrl: "https://www.google.com/s2/favicons?domain=jumpcloud.com&sz=128",
   },
 ];
 
