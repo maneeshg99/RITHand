@@ -84,10 +84,10 @@ export default function OrgDetailPage() {
         getAdminLevel(),
       ]);
 
-      debug.push(`getOrganization: ${orgRes.error || orgRes.data?.name || "no data"}`);
-      debug.push(`getOrgMembersForOrg: ${membersRes.error || `${(membersRes.data || []).length} members`}`);
-      debug.push(`getClientsForOrg: ${clientsRes.error || `${(clientsRes.data || []).length} clients`}`);
-      debug.push(`getAdminLevel: level=${levelRes.level}, hasOrg=${levelRes.hasOrg}, orgId=${levelRes.orgId}`);
+      debug.push(`getOrganization: ${JSON.stringify(orgRes)}`);
+      debug.push(`getOrgMembersForOrg: ${JSON.stringify(membersRes)}`);
+      debug.push(`getClientsForOrg: ${JSON.stringify(clientsRes)}`);
+      debug.push(`getAdminLevel: ${JSON.stringify(levelRes)}`);
 
       if (orgRes.error) {
         setError(orgRes.error);
@@ -232,13 +232,11 @@ export default function OrgDetailPage() {
         </div>
       )}
 
-      {/* Debug info — remove after testing */}
-      {debugInfo && (
-        <details className="mb-4 p-3 rounded-lg bg-muted border border-border text-xs font-mono">
-          <summary className="cursor-pointer text-muted-foreground">Debug Info (click to expand)</summary>
-          <pre className="mt-2 whitespace-pre-wrap text-foreground">{debugInfo}</pre>
-        </details>
-      )}
+      {/* Debug info — TEMPORARY — remove after testing */}
+      <div className="mb-4 p-4 rounded-lg bg-yellow-100 border-2 border-yellow-400 text-xs font-mono text-yellow-900">
+        <p className="font-bold mb-2 text-sm">DEBUG OUTPUT (temporary - will be removed)</p>
+        <pre className="whitespace-pre-wrap">{debugInfo || "Loading..."}</pre>
+      </div>
 
       {/* Two-column layout */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
