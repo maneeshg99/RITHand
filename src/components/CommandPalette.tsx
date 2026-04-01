@@ -8,7 +8,6 @@ import {
   FolderOpen,
   CheckSquare,
   AlertTriangle,
-  Building2,
   Bookmark,
   Settings,
   ShieldCheck,
@@ -18,7 +17,7 @@ import { AnimatePresence, motion } from "framer-motion";
 
 const commands = [
   { label: "Dashboard", href: "/app", icon: LayoutDashboard, keywords: "home" },
-  { label: "Clients", href: "/app/clients", icon: FolderOpen, keywords: "client account" },
+  { label: "Clients", href: "/app/clients", icon: FolderOpen, keywords: "client account vendor" },
   { label: "Tasks", href: "/app/tasks", icon: CheckSquare, keywords: "task todo" },
   {
     label: "Vulnerabilities",
@@ -26,7 +25,6 @@ const commands = [
     icon: AlertTriangle,
     keywords: "vuln cve security",
   },
-  { label: "Vendors", href: "/app/vendors", icon: Building2, keywords: "vendor tool" },
   { label: "Bookmarks", href: "/app/bookmarks", icon: Bookmark, keywords: "bookmark saved" },
   { label: "Settings", href: "/app/settings", icon: Settings, keywords: "settings preferences" },
   { label: "Admin Panel", href: "/app/admin", icon: ShieldCheck, keywords: "admin manage" },

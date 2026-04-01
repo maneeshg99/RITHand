@@ -43,12 +43,14 @@ export function VendorCard({ vendor }: VendorCardProps) {
             onError={() => setImgError(true)}
           />
         ) : (
-          <Building2
+          <span
             className={cn(
-              "h-6 w-6",
+              "text-lg font-bold",
               selected ? "text-primary" : "text-muted-foreground"
             )}
-          />
+          >
+            {vendor.name.charAt(0)}
+          </span>
         )}
       </div>
 
